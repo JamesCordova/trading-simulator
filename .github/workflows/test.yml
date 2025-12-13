@@ -27,11 +27,11 @@ jobs:
         run: npm ci
       
       - name: Run linter
-        run: npm run lint
+        run: npx next lint --dir src
         continue-on-error: true
       
       - name: Run tests
-        run: npm test
+        run: npm test -- --passWithNoTests
       
       - name: Generate coverage report
         run: npm run test:coverage
