@@ -2,6 +2,16 @@
 
 Este proyecto incluye tests automatizados usando Jest y React Testing Library.
 
+## 📊 Ver Reportes en Línea
+
+Los reportes de tests se publican automáticamente en GitHub Pages:
+
+- 🏠 **Hub de Reportes**: https://yemmy03.github.io/trading-sim-app/
+- 🚀 **Dashboard CI/CD**: https://yemmy03.github.io/trading-sim-app/dashboard/
+- 📈 **Reporte de Coverage**: https://yemmy03.github.io/trading-sim-app/coverage/
+
+Los reportes se actualizan automáticamente cada vez que haces push a `main`.
+
 ## 🧪 Ejecutar Tests
 
 ### Ejecutar todos los tests

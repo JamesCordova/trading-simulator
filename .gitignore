@@ -40,3 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+# test reports
+dashboard/
+test-results/
+extra files/gitlab

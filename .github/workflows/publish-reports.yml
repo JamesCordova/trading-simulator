@@ -1,0 +1,268 @@
+name: Publish Test Reports to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+# Permisos necesarios para GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Solo permite un despliegue concurrente
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests with coverage
+        run: npm run test:coverage
+        continue-on-error: false
+      
+      - name: Save test results
+        run: |
+          mkdir -p test-results
+          npm test 2>&1 | tee test-results/test-output.txt || true
+      
+      - name: Generate dashboard
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          chmod +x .github/scripts/generate-dashboard.sh
+          bash .github/scripts/generate-dashboard.sh
+      
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            coverage/
+            dashboard/
+            test-results/
+          retention-days: 30
+  
+  deploy-to-pages:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: Download test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: test-reports
+          path: ./reports
+      
+      - name: Create Pages structure
+        run: |
+          mkdir -p public
+          
+          # Crear página principal
+          cat > public/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Trading Simulator - Test Reports Hub</title>
+              <style>
+                  * {
+                      margin: 0;
+                      padding: 0;
+                      box-sizing: border-box;
+                  }
+                  
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                      min-height: 100vh;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      padding: 20px;
+                  }
+                  
+                  .container {
+                      max-width: 800px;
+                      width: 100%;
+                  }
+                  
+                  .card {
+                      background: white;
+                      border-radius: 20px;
+                      padding: 50px;
+                      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                      text-align: center;
+                  }
+                  
+                  h1 {
+                      color: #2d3748;
+                      font-size: 3rem;
+                      margin-bottom: 20px;
+                  }
+                  
+                  .subtitle {
+                      color: #718096;
+                      font-size: 1.3rem;
+                      margin-bottom: 40px;
+                  }
+                  
+                  .links {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                      gap: 20px;
+                      margin-top: 40px;
+                  }
+                  
+                  .link-card {
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      color: white;
+                      padding: 30px 20px;
+                      border-radius: 15px;
+                      text-decoration: none;
+                      transition: all 0.3s ease;
+                      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+                  }
+                  
+                  .link-card:hover {
+                      transform: translateY(-5px);
+                      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+                  }
+                  
+                  .link-icon {
+                      font-size: 3rem;
+                      margin-bottom: 15px;
+                  }
+                  
+                  .link-title {
+                      font-size: 1.3rem;
+                      font-weight: 600;
+                      margin-bottom: 8px;
+                  }
+                  
+                  .link-desc {
+                      font-size: 0.9rem;
+                      opacity: 0.9;
+                  }
+                  
+                  .footer {
+                      margin-top: 40px;
+                      color: #cbd5e0;
+                      font-size: 0.9rem;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="card">
+                      <h1>📊 Test Reports Hub</h1>
+                      <p class="subtitle">Trading Simulator Application</p>
+                      
+                      <div class="links">
+                          <a href="dashboard/" class="link-card">
+                              <div class="link-icon">🚀</div>
+                              <div class="link-title">CI/CD Dashboard</div>
+                              <div class="link-desc">Build metrics & status</div>
+                          </a>
+                          
+                          <a href="coverage/" class="link-card">
+                              <div class="link-icon">📈</div>
+                              <div class="link-title">Coverage Report</div>
+                              <div class="link-desc">Code coverage details</div>
+                          </a>
+                          
+                          <a href="https://github.com/Yemmy03/trading-sim-app" class="link-card">
+                              <div class="link-icon">💻</div>
+                              <div class="link-title">Source Code</div>
+                              <div class="link-desc">View on GitHub</div>
+                          </a>
+                          
+                          <a href="https://github.com/Yemmy03/trading-sim-app/actions" class="link-card">
+                              <div class="link-icon">⚙️</div>
+                              <div class="link-title">GitHub Actions</div>
+                              <div class="link-desc">CI/CD workflows</div>
+                          </a>
+                      </div>
+                      
+                      <div class="footer">
+                          Last updated: $(date '+%Y-%m-%d %H:%M:%S UTC')
+                      </div>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+          
+          # Copiar reportes
+          echo "📊 Copiando reportes..."
+          cp -r reports/coverage public/ || echo "⚠️ No coverage reports"
+          cp -r reports/dashboard public/ || echo "⚠️ No dashboard"
+          
+          # Listar contenido
+          echo "📂 Contenido generado:"
+          ls -la public/
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      
+      - name: Comment on commit
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `## 📊 Test Reports Published!
+            
+            Your test reports have been successfully deployed to GitHub Pages:
+            
+            🚀 **Dashboard**: ${{ steps.deployment.outputs.page_url }}dashboard/
+            📈 **Coverage Report**: ${{ steps.deployment.outputs.page_url }}coverage/
+            🏠 **Reports Hub**: ${{ steps.deployment.outputs.page_url }}
+            
+            Build completed at: ${new Date().toISOString()}
+            `;
+            
+            // Get the latest commit
+            const { data: commits } = await github.rest.repos.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              per_page: 1
+            });
+            
+            if (commits.length > 0) {
+              await github.rest.repos.createCommitComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: commits[0].sha,
+                body: comment
+              });
+            }
