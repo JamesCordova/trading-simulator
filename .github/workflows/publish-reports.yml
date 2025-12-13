@@ -235,34 +235,9 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
       
-      - name: Comment on commit
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const comment = `## 📊 Test Reports Published!
-            
-            Your test reports have been successfully deployed to GitHub Pages:
-            
-            🚀 **Dashboard**: ${{ steps.deployment.outputs.page_url }}dashboard/
-            📈 **Coverage Report**: ${{ steps.deployment.outputs.page_url }}coverage/
-            🏠 **Reports Hub**: ${{ steps.deployment.outputs.page_url }}
-            
-            Build completed at: ${new Date().toISOString()}
-            `;
-            
-            // Get the latest commit
-            const { data: commits } = await github.rest.repos.listCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.sha,
-              per_page: 1
-            });
-            
-            if (commits.length > 0) {
-              await github.rest.repos.createCommitComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                commit_sha: commits[0].sha,
-                body: comment
-              });
-            }
+      - name: Display deployment URL
+        run: |
+          echo "📊 Test Reports Published!"
+          echo "🚀 Dashboard: ${{ steps.deployment.outputs.page_url }}dashboard/"
+          echo "📈 Coverage Report: ${{ steps.deployment.outputs.page_url }}coverage/"
+          echo "🏠 Reports Hub: ${{ steps.deployment.outputs.page_url }}"
