@@ -45,7 +45,7 @@ jobs:
         with:
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-            -Dsonar.projectKey=Selected-Projects-Org_trading-sim-app
+            -Dsonar.projectKey=selected-projects-org_trading-sim-app
             -Dsonar.sources=src
             -Dsonar.tests=src
             -Dsonar.test.inclusions=**/*.test.jsx,**/*.test.js,**/*.test.tsx,**/*.test.ts,**/__tests__/**

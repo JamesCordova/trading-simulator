@@ -1,11 +1,11 @@
 # 📈 Trading Simulator App
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Selected-Projects-Org_trading-sim-app&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Selected-Projects-Org_trading-sim-app)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Selected-Projects-Org_trading-sim-app&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Selected-Projects-Org_trading-sim-app)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Selected-Projects-Org_trading-sim-app&metric=bugs)](https://sonarcloud.io/summary/new_code?id=Selected-Projects-Org_trading-sim-app)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=Selected-Projects-Org_trading-sim-app&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=Selected-Projects-Org_trading-sim-app)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=Selected-Projects-Org_trading-sim-app&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=Selected-Projects-Org_trading-sim-app)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Selected-Projects-Org_trading-sim-app&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Selected-Projects-Org_trading-sim-app)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=selected-projects-org_trading-sim-app)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=coverage)](https://sonarcloud.io/summary/new_code?id=selected-projects-org_trading-sim-app)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=bugs)](https://sonarcloud.io/summary/new_code?id=selected-projects-org_trading-sim-app)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=selected-projects-org_trading-sim-app)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=selected-projects-org_trading-sim-app)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=selected-projects-org_trading-sim-app)
 
 ## Overview
 ```
@@ -16,7 +16,7 @@ The Trading Simulator App is a web-based platform built with Next.js that allows
 
 - **Test Coverage**: [View Coverage Report](https://yemmy03.github.io/trading-sim-app/coverage/)
 - **CI/CD Dashboard**: [View Dashboard](https://yemmy03.github.io/trading-sim-app/dashboard/)
-- **SonarCloud Analysis**: [View Quality Metrics](https://sonarcloud.io/project/overview?id=Selected-Projects-Org_trading-sim-app)
+- **SonarCloud Analysis**: [View Quality Metrics](https://sonarcloud.io/project/overview?id=selected-projects-org_trading-sim-app)
 - **GitHub Actions**: [View Workflows](https://github.com/Yemmy03/trading-sim-app/actions)
 
 # Features
