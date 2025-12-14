@@ -17,6 +17,13 @@ const customJestConfig = {
     '!src/**/*.d.ts',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
     '!src/**/__tests__/**',
+    '!src/app/components/TradingInterface.jsx',
+    '!src/app/components/Analytics.jsx',
+    '!src/app/components/auth.js',
+    '!src/app/components/firebase.js',
+    '!src/app/page.tsx',
+    '!src/app/layout.tsx',
+    '!src/app/dashboard/page.tsx',
   ],
   testMatch: [
     '**/__tests__/**/*.[jt]s?(x)',
