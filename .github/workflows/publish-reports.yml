@@ -211,7 +211,7 @@ jobs:
                               <div class="link-desc">CI/CD workflows</div>
                           </a>
                           
-                          <a href="https://sonarcloud.io/project/overview?id=Yemmy03_trading-sim-app" class="link-card" style="background: linear-gradient(135deg, #f6851b 0%, #ff6b35 100%);">
+                          <a href="https://sonarcloud.io/project/overview?id=selected-projects-org_trading-sim-app" class="link-card" style="background: linear-gradient(135deg, #f6851b 0%, #ff6b35 100%);">
                               <div class="link-icon">🔍</div>
                               <div class="link-title">SonarCloud</div>
                               <div class="link-desc">Code quality analysis</div>
@@ -329,53 +329,53 @@ jobs:
                       <div class="badge-grid">
                           <div class="badge-item">
                               <div class="badge-title">Quality Gate</div>
-                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=alert_status" alt="Quality Gate Status">
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=alert_status" alt="Quality Gate Status">
                           </div>
                           <div class="badge-item">
                               <div class="badge-title">Code Coverage</div>
-                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=coverage" alt="Coverage">
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=coverage" alt="Coverage">
                           </div>
                           <div class="badge-item">
                               <div class="badge-title">Lines of Code</div>
-                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=ncloc" alt="Lines of Code">
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=ncloc" alt="Lines of Code">
                           </div>
                           <div class="badge-item">
                               <div class="badge-title">Bugs</div>
-                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=bugs" alt="Bugs">
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=bugs" alt="Bugs">
                           </div>
                           <div class="badge-item">
                               <div class="badge-title">Code Smells</div>
-                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=code_smells" alt="Code Smells">
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=code_smells" alt="Code Smells">
                           </div>
                           <div class="badge-item">
                               <div class="badge-title">Technical Debt</div>
-                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=sqale_index" alt="Technical Debt">
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=sqale_index" alt="Technical Debt">
                           </div>
                           <div class="badge-item">
                               <div class="badge-title">Vulnerabilities</div>
-                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=vulnerabilities" alt="Vulnerabilities">
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=vulnerabilities" alt="Vulnerabilities">
                           </div>
                           <div class="badge-item">
                               <div class="badge-title">Security Rating</div>
-                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=security_rating" alt="Security Rating">
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=security_rating" alt="Security Rating">
                           </div>
                           <div class="badge-item">
                               <div class="badge-title">Maintainability Rating</div>
-                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=sqale_rating" alt="Maintainability Rating">
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=sqale_rating" alt="Maintainability Rating">
                           </div>
                           <div class="badge-item">
                               <div class="badge-title">Reliability Rating</div>
-                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=reliability_rating" alt="Reliability Rating">
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=reliability_rating" alt="Reliability Rating">
                           </div>
                           <div class="badge-item">
                               <div class="badge-title">Duplicated Lines</div>
-                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=duplicated_lines_density" alt="Duplicated Lines">
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=selected-projects-org_trading-sim-app&metric=duplicated_lines_density" alt="Duplicated Lines">
                           </div>
                       </div>
                   </div>
                   
                   <div style="text-align: center;">
-                      <a href="https://sonarcloud.io/project/overview?id=Yemmy03_trading-sim-app" class="back-link" target="_blank">
+                      <a href="https://sonarcloud.io/project/overview?id=selected-projects-org_trading-sim-app" class="back-link" target="_blank">
                           🔗 View Full Report on SonarCloud
                       </a>
                       <a href="index.html" class="back-link">
