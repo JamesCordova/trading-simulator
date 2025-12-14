@@ -41,6 +41,13 @@ jobs:
           mkdir -p test-results
           npm test 2>&1 | tee test-results/test-output.txt || true
       
+      - name: Download SonarCloud artifacts (if available)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: sonarcloud-results
+          path: sonarcloud-results/
+      
       - name: Generate dashboard
         env:
           GITHUB_SHA: ${{ github.sha }}
@@ -203,6 +210,18 @@ jobs:
                               <div class="link-title">GitHub Actions</div>
                               <div class="link-desc">CI/CD workflows</div>
                           </a>
+                          
+                          <a href="https://sonarcloud.io/project/overview?id=Yemmy03_trading-sim-app" class="link-card" style="background: linear-gradient(135deg, #f6851b 0%, #ff6b35 100%);">
+                              <div class="link-icon">🔍</div>
+                              <div class="link-title">SonarCloud</div>
+                              <div class="link-desc">Code quality analysis</div>
+                          </a>
+                          
+                          <a href="sonarcloud-badge.html" class="link-card" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">
+                              <div class="link-icon">✅</div>
+                              <div class="link-title">Quality Status</div>
+                              <div class="link-desc">SonarCloud badges</div>
+                          </a>
                       </div>
                       
                       <div class="footer">
@@ -218,6 +237,155 @@ jobs:
           echo "📊 Copiando reportes..."
           cp -r reports/coverage public/ || echo "⚠️ No coverage reports"
           cp -r reports/dashboard public/ || echo "⚠️ No dashboard"
+          
+          # Crear página de badges de SonarCloud
+          cat > public/sonarcloud-badge.html << 'BADGEEOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>SonarCloud Quality Status - Trading Simulator</title>
+              <style>
+                  * {
+                      margin: 0;
+                      padding: 0;
+                      box-sizing: border-box;
+                  }
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                      min-height: 100vh;
+                      padding: 40px 20px;
+                  }
+                  .container {
+                      max-width: 1200px;
+                      margin: 0 auto;
+                  }
+                  .header {
+                      text-align: center;
+                      color: white;
+                      margin-bottom: 40px;
+                  }
+                  .header h1 {
+                      font-size: 2.5rem;
+                      margin-bottom: 10px;
+                  }
+                  .card {
+                      background: white;
+                      border-radius: 15px;
+                      padding: 30px;
+                      margin-bottom: 20px;
+                      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                  }
+                  .badge-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                      gap: 20px;
+                      margin-top: 20px;
+                  }
+                  .badge-item {
+                      text-align: center;
+                      padding: 20px;
+                      background: #f7fafc;
+                      border-radius: 10px;
+                      transition: transform 0.2s;
+                  }
+                  .badge-item:hover {
+                      transform: scale(1.05);
+                  }
+                  .badge-title {
+                      font-weight: 600;
+                      color: #2d3748;
+                      margin-bottom: 15px;
+                      font-size: 1.1rem;
+                  }
+                  .back-link {
+                      display: inline-block;
+                      margin-top: 20px;
+                      padding: 12px 24px;
+                      background: white;
+                      color: #2d3748;
+                      text-decoration: none;
+                      border-radius: 8px;
+                      font-weight: 600;
+                      transition: all 0.3s;
+                  }
+                  .back-link:hover {
+                      background: #f7fafc;
+                      transform: translateY(-2px);
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="header">
+                      <h1>🔍 SonarCloud Quality Analysis</h1>
+                      <p>Trading Simulator - Code Quality Metrics</p>
+                  </div>
+                  
+                  <div class="card">
+                      <h2>📊 Quality Metrics</h2>
+                      <div class="badge-grid">
+                          <div class="badge-item">
+                              <div class="badge-title">Quality Gate</div>
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=alert_status" alt="Quality Gate Status">
+                          </div>
+                          <div class="badge-item">
+                              <div class="badge-title">Code Coverage</div>
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=coverage" alt="Coverage">
+                          </div>
+                          <div class="badge-item">
+                              <div class="badge-title">Lines of Code</div>
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=ncloc" alt="Lines of Code">
+                          </div>
+                          <div class="badge-item">
+                              <div class="badge-title">Bugs</div>
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=bugs" alt="Bugs">
+                          </div>
+                          <div class="badge-item">
+                              <div class="badge-title">Code Smells</div>
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=code_smells" alt="Code Smells">
+                          </div>
+                          <div class="badge-item">
+                              <div class="badge-title">Technical Debt</div>
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=sqale_index" alt="Technical Debt">
+                          </div>
+                          <div class="badge-item">
+                              <div class="badge-title">Vulnerabilities</div>
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=vulnerabilities" alt="Vulnerabilities">
+                          </div>
+                          <div class="badge-item">
+                              <div class="badge-title">Security Rating</div>
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=security_rating" alt="Security Rating">
+                          </div>
+                          <div class="badge-item">
+                              <div class="badge-title">Maintainability Rating</div>
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=sqale_rating" alt="Maintainability Rating">
+                          </div>
+                          <div class="badge-item">
+                              <div class="badge-title">Reliability Rating</div>
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=reliability_rating" alt="Reliability Rating">
+                          </div>
+                          <div class="badge-item">
+                              <div class="badge-title">Duplicated Lines</div>
+                              <img src="https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=duplicated_lines_density" alt="Duplicated Lines">
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div style="text-align: center;">
+                      <a href="https://sonarcloud.io/project/overview?id=Yemmy03_trading-sim-app" class="back-link" target="_blank">
+                          🔗 View Full Report on SonarCloud
+                      </a>
+                      <a href="index.html" class="back-link">
+                          ← Back to Dashboard
+                      </a>
+                  </div>
+              </div>
+          </body>
+          </html>
+          BADGEEOF
           
           # Listar contenido
           echo "📂 Contenido generado:"

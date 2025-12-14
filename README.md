@@ -1,8 +1,23 @@
-### Trading Simulator App
-Overview
+# 📈 Trading Simulator App
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Yemmy03_trading-sim-app)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Yemmy03_trading-sim-app)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=bugs)](https://sonarcloud.io/summary/new_code?id=Yemmy03_trading-sim-app)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=Yemmy03_trading-sim-app)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=Yemmy03_trading-sim-app)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Yemmy03_trading-sim-app&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Yemmy03_trading-sim-app)
+
+## Overview
 ```
 The Trading Simulator App is a web-based platform built with Next.js that allows users to simulate trading activities in a risk-free environment. Users can practice trading strategies, track performance, and interact with a simulated market without using real money. The app leverages Firebase for backend services and state management.
 ```
+
+## 📊 Quality Reports
+
+- **Test Coverage**: [View Coverage Report](https://yemmy03.github.io/trading-sim-app/coverage/)
+- **CI/CD Dashboard**: [View Dashboard](https://yemmy03.github.io/trading-sim-app/dashboard/)
+- **SonarCloud Analysis**: [View Quality Metrics](https://sonarcloud.io/project/overview?id=Yemmy03_trading-sim-app)
+- **GitHub Actions**: [View Workflows](https://github.com/Yemmy03/trading-sim-app/actions)
 
 # Features
 ```
