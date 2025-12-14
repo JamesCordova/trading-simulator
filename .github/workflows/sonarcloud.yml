@@ -38,23 +38,12 @@ jobs:
         continue-on-error: false
       
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-            -Dsonar.projectKey=selected-projects-org_trading-sim-app
-            -Dsonar.sources=src
-            -Dsonar.tests=src
-            -Dsonar.test.inclusions=**/*.test.jsx,**/*.test.js,**/*.test.tsx,**/*.test.ts,**/__tests__/**
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.coverage.exclusions=**/*.test.*,**/__tests__/**,**/*.config.*
-            -Dsonar.exclusions=**/node_modules/**,**/.next/**,**/coverage/**,**/public/**
       
       - name: Check Quality Gate
-        uses: sonarsource/sonarqube-quality-gate-action@master
+        uses: sonarsource/sonarqube-quality-gate-action@v1
         timeout-minutes: 5
         continue-on-error: true
         env:
