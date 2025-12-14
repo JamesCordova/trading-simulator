@@ -100,15 +100,15 @@ También puedes descargar los artifacts directamente:
 - `VERCEL_PROJECT_ID` - ID del proyecto en Vercel
 
 ### URL de Producción
-El workflow está configurado para auditar:
-```
-https://trading-simulator-jamescordovas-projects.vercel.app
-```
+El workflow **obtiene automáticamente** la URL de Vercel del deployment:
+- URL de producción principal: `https://trading-simulator-beryl.vercel.app`
+- El workflow captura la URL real del comando `vercel deploy`
+- Si falla, usa la URL de producción por defecto como fallback
 
-**⚠️ Importante**: Si tu URL de Vercel es diferente, actualiza el archivo `.github/workflows/lighthouse.yml` línea 36:
-```yaml
-VERCEL_URL="https://tu-url-de-vercel.vercel.app"
-```
+**✅ Ventajas**:
+- No necesitas actualizar URLs manualmente
+- Siempre audita el deployment más reciente
+- Funciona con URLs de preview y producción
 
 ## 🎯 Umbrales de Calidad
 

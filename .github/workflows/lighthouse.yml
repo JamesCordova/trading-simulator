@@ -24,32 +24,51 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          
+      
       - name: Wait for Vercel Deployment
-        id: wait-for-deployment
         run: |
           echo "⏳ Esperando a que Vercel termine el despliegue..."
+          sleep 90
+      
+      - name: Download Vercel Deployment URL
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: deployment-url
+          path: ./
+      
+      - name: Get Deployment URL
+        id: get-url
+        run: |
+          # Intentar obtener URL del artifact
+          if [ -f "deployment-url.txt" ]; then
+            VERCEL_URL=$(cat deployment-url.txt | tr -d '\n\r')
+            echo "✅ URL obtenida del deployment: $VERCEL_URL"
+          else
+            # Fallback a URL de producción conocida
+            VERCEL_URL="https://trading-simulator-beryl.vercel.app"
+            echo "⚠️ Usando URL de producción por defecto: $VERCEL_URL"
+          fi
           
-          # Esperar 60 segundos para que Vercel termine
-          sleep 60
-          
-          # Si tienes la URL de producción de Vercel, úsala aquí
-          # Por defecto, intentaremos construir la URL desde el nombre del repo
-          VERCEL_URL="https://trading-simulator-jamescordovas-projects.vercel.app"
-          
-          echo "🌐 URL de prueba: $VERCEL_URL"
           echo "url=$VERCEL_URL" >> $GITHUB_OUTPUT
+          echo "🌐 URL final para auditar: $VERCEL_URL"
+      
+      - name: Verify Site Accessibility
+        run: |
+          VERCEL_URL="${{ steps.get-url.outputs.url }}"
           
-          # Verificar que el sitio está accesible
           echo "🔍 Verificando que el sitio está en línea..."
-          for i in {1..10}; do
+          for i in {1..15}; do
             if curl -s --head --fail "$VERCEL_URL" > /dev/null; then
               echo "✅ Sitio accesible!"
-              break
+              exit 0
             fi
-            echo "⏳ Intento $i/10 - Esperando..."
+            echo "⏳ Intento $i/15 - Esperando 10 segundos..."
             sleep 10
           done
+          
+          echo "❌ Sitio no accesible después de 150 segundos"
+          exit 1
       
       - name: Install Lighthouse CI
         run: npm install -g @lhci/cli@0.13.x
@@ -58,9 +77,12 @@ jobs:
         run: |
           mkdir -p lighthouse-reports
           
+          VERCEL_URL="${{ steps.get-url.outputs.url }}"
+          echo "🚀 Ejecutando Lighthouse en: $VERCEL_URL"
+          
           # Ejecutar Lighthouse en la URL de producción usando la configuración
           lhci autorun \
-            --collect.url=${{ steps.wait-for-deployment.outputs.url }} \
+            --collect.url="$VERCEL_URL" \
             --collect.settings.chromeFlags="--no-sandbox --headless --disable-gpu" \
             --config=./lighthouserc.json
         continue-on-error: true
@@ -69,8 +91,10 @@ jobs:
         run: |
           mkdir -p lighthouse-reports/summary
           
+          VERCEL_URL="${{ steps.get-url.outputs.url }}"
+          
           # Crear página HTML con resumen de Lighthouse
-          cat > lighthouse-reports/summary/index.html << 'EOF'
+          cat > lighthouse-reports/summary/index.html << EOF
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -216,6 +240,7 @@ jobs:
                   <div class="header">
                       <h1>⚡ Lighthouse Performance Audit</h1>
                       <p>Trading Simulator Application</p>
+                      <p style="font-size: 0.9rem; margin-top: 10px;">Audited URL: <strong>$VERCEL_URL</strong></p>
                   </div>
                   
                   <div class="card">
@@ -265,7 +290,7 @@ jobs:
                               <span class="report-icon">📊</span>
                               View Full Lighthouse Reports
                           </a>
-                          <a href="https://trading-simulator-jamescordovas-projects.vercel.app" class="report-link" target="_blank">
+                          <a href="$VERCEL_URL" class="report-link" target="_blank">
                               <span class="report-icon">🌐</span>
                               Visit Production Site
                           </a>
