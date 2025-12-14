@@ -25,33 +25,36 @@ jobs:
         with:
           node-version: 20
       
-      - name: Wait for Vercel Deployment
-        run: |
-          echo "⏳ Esperando a que Vercel termine el despliegue..."
-          sleep 90
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
       
-      - name: Download Vercel Deployment URL
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: deployment-url
-          path: ./
-      
-      - name: Get Deployment URL
+      - name: Get Production URL from Vercel
         id: get-url
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          # Intentar obtener URL del artifact
-          if [ -f "deployment-url.txt" ]; then
-            VERCEL_URL=$(cat deployment-url.txt | tr -d '\n\r')
-            echo "✅ URL obtenida del deployment: $VERCEL_URL"
-          else
-            # Fallback a URL de producción conocida
+          echo "⏳ Obteniendo URL de producción desde Vercel..."
+          
+          # Obtener la URL de producción usando Vercel CLI
+          VERCEL_URL=$(vercel ls --token=$VERCEL_TOKEN 2>/dev/null | grep -oP 'https://[^\s]+\.vercel\.app' | head -1)
+          
+          # Si no se obtiene, usar la URL de producción conocida
+          if [ -z "$VERCEL_URL" ]; then
             VERCEL_URL="https://trading-simulator-beryl.vercel.app"
-            echo "⚠️ Usando URL de producción por defecto: $VERCEL_URL"
+            echo "⚠️ No se pudo obtener URL desde Vercel CLI, usando URL por defecto"
+          else
+            echo "✅ URL obtenida desde Vercel: $VERCEL_URL"
           fi
           
           echo "url=$VERCEL_URL" >> $GITHUB_OUTPUT
           echo "🌐 URL final para auditar: $VERCEL_URL"
+      
+      - name: Wait for Deployment to be Ready
+        run: |
+          echo "⏳ Esperando a que el deployment esté completamente listo..."
+          sleep 60
       
       - name: Verify Site Accessibility
         run: |
