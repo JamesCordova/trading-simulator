@@ -100,16 +100,18 @@ También puedes descargar los artifacts directamente:
 - `VERCEL_PROJECT_ID` - ID del proyecto en Vercel
 
 ### URL de Producción
-El workflow **obtiene automáticamente** la URL de Vercel usando Vercel CLI:
-- URL de producción principal: `https://trading-simulator-beryl.vercel.app`
-- El workflow consulta `vercel ls` para obtener la última URL de deployment
-- Si falla, usa la URL de producción conocida como fallback
+El workflow usa la **URL de producción permanente de Vercel**:
+```
+https://trading-simulator-beryl.vercel.app
+```
 
-**✅ Ventajas**:
-- No necesitas actualizar URLs manualmente
-- Usa Vercel CLI para obtener la URL real de producción
-- Sistema de fallback confiable
-- No depende de artifacts entre workflows
+Esta es la URL de producción que Vercel asigna a tu proyecto y **nunca cambia**.
+
+**✅ Por qué es simple y confiable**:
+- URL única y permanente para producción
+- No depende de APIs o CLIs externos
+- Siempre apunta al último deployment en producción
+- Las URLs temporales (con hash) son solo para preview, no para producción
 
 ## 🎯 Umbrales de Calidad
 
