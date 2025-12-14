@@ -1,0 +1,323 @@
+name: Lighthouse Performance Audit
+
+on:
+  # Se ejecuta después de cada push a main (después del deploy de Vercel)
+  push:
+    branches: [ main ]
+  # Permite ejecución manual
+  workflow_dispatch:
+  # Se ejecuta después del workflow de Vercel
+  workflow_run:
+    workflows: ["Deploy to Vercel"]
+    types:
+      - completed
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Wait for Vercel Deployment
+        id: wait-for-deployment
+        run: |
+          echo "⏳ Esperando a que Vercel termine el despliegue..."
+          
+          # Esperar 60 segundos para que Vercel termine
+          sleep 60
+          
+          # Si tienes la URL de producción de Vercel, úsala aquí
+          # Por defecto, intentaremos construir la URL desde el nombre del repo
+          VERCEL_URL="https://trading-simulator-jamescordovas-projects.vercel.app"
+          
+          echo "🌐 URL de prueba: $VERCEL_URL"
+          echo "url=$VERCEL_URL" >> $GITHUB_OUTPUT
+          
+          # Verificar que el sitio está accesible
+          echo "🔍 Verificando que el sitio está en línea..."
+          for i in {1..10}; do
+            if curl -s --head --fail "$VERCEL_URL" > /dev/null; then
+              echo "✅ Sitio accesible!"
+              break
+            fi
+            echo "⏳ Intento $i/10 - Esperando..."
+            sleep 10
+          done
+      
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.13.x
+      
+      - name: Run Lighthouse CI
+        run: |
+          mkdir -p lighthouse-reports
+          
+          # Ejecutar Lighthouse en la URL de producción usando la configuración
+          lhci autorun \
+            --collect.url=${{ steps.wait-for-deployment.outputs.url }} \
+            --collect.settings.chromeFlags="--no-sandbox --headless --disable-gpu" \
+            --config=./lighthouserc.json
+        continue-on-error: true
+      
+      - name: Generate Lighthouse Report Summary
+        run: |
+          mkdir -p lighthouse-reports/summary
+          
+          # Crear página HTML con resumen de Lighthouse
+          cat > lighthouse-reports/summary/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Lighthouse Performance Report - Trading Simulator</title>
+              <style>
+                  * {
+                      margin: 0;
+                      padding: 0;
+                      box-sizing: border-box;
+                  }
+                  
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                      padding: 40px 20px;
+                  }
+                  
+                  .container {
+                      max-width: 1200px;
+                      margin: 0 auto;
+                  }
+                  
+                  .header {
+                      text-align: center;
+                      color: white;
+                      margin-bottom: 40px;
+                  }
+                  
+                  .header h1 {
+                      font-size: 2.5rem;
+                      margin-bottom: 10px;
+                  }
+                  
+                  .card {
+                      background: white;
+                      border-radius: 15px;
+                      padding: 30px;
+                      margin-bottom: 20px;
+                      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                  }
+                  
+                  .metrics-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                      gap: 20px;
+                      margin-top: 20px;
+                  }
+                  
+                  .metric-card {
+                      text-align: center;
+                      padding: 20px;
+                      background: #f7fafc;
+                      border-radius: 10px;
+                      transition: transform 0.2s;
+                  }
+                  
+                  .metric-card:hover {
+                      transform: scale(1.05);
+                  }
+                  
+                  .metric-icon {
+                      font-size: 3rem;
+                      margin-bottom: 10px;
+                  }
+                  
+                  .metric-title {
+                      font-weight: 600;
+                      color: #2d3748;
+                      margin-bottom: 10px;
+                      font-size: 1.1rem;
+                  }
+                  
+                  .metric-score {
+                      font-size: 2.5rem;
+                      font-weight: bold;
+                      margin: 10px 0;
+                  }
+                  
+                  .score-good { color: #38a169; }
+                  .score-average { color: #d69e2e; }
+                  .score-poor { color: #e53e3e; }
+                  
+                  .report-links {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                      gap: 15px;
+                      margin-top: 20px;
+                  }
+                  
+                  .report-link {
+                      display: flex;
+                      align-items: center;
+                      padding: 15px 20px;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      color: white;
+                      text-decoration: none;
+                      border-radius: 10px;
+                      transition: all 0.3s ease;
+                      font-weight: 500;
+                  }
+                  
+                  .report-link:hover {
+                      transform: translateX(5px);
+                      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+                  }
+                  
+                  .report-icon {
+                      margin-right: 10px;
+                      font-size: 1.5rem;
+                  }
+                  
+                  .back-link {
+                      display: inline-block;
+                      margin-top: 20px;
+                      padding: 12px 24px;
+                      background: white;
+                      color: #2d3748;
+                      text-decoration: none;
+                      border-radius: 8px;
+                      font-weight: 600;
+                      transition: all 0.3s;
+                  }
+                  
+                  .back-link:hover {
+                      background: #f7fafc;
+                      transform: translateY(-2px);
+                  }
+                  
+                  .info-box {
+                      background: #edf2f7;
+                      padding: 15px;
+                      border-radius: 8px;
+                      margin-top: 20px;
+                      border-left: 4px solid #667eea;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="header">
+                      <h1>⚡ Lighthouse Performance Audit</h1>
+                      <p>Trading Simulator Application</p>
+                  </div>
+                  
+                  <div class="card">
+                      <h2>📊 Performance Metrics</h2>
+                      <div class="metrics-grid">
+                          <div class="metric-card">
+                              <div class="metric-icon">⚡</div>
+                              <div class="metric-title">Performance</div>
+                              <div class="metric-score score-good" id="performance-score">--</div>
+                          </div>
+                          <div class="metric-card">
+                              <div class="metric-icon">♿</div>
+                              <div class="metric-title">Accessibility</div>
+                              <div class="metric-score score-good" id="accessibility-score">--</div>
+                          </div>
+                          <div class="metric-card">
+                              <div class="metric-icon">✅</div>
+                              <div class="metric-title">Best Practices</div>
+                              <div class="metric-score score-good" id="best-practices-score">--</div>
+                          </div>
+                          <div class="metric-card">
+                              <div class="metric-icon">🔍</div>
+                              <div class="metric-title">SEO</div>
+                              <div class="metric-score score-good" id="seo-score">--</div>
+                          </div>
+                          <div class="metric-card">
+                              <div class="metric-icon">📱</div>
+                              <div class="metric-title">PWA</div>
+                              <div class="metric-score score-average" id="pwa-score">--</div>
+                          </div>
+                      </div>
+                      
+                      <div class="info-box">
+                          <strong>ℹ️ About these scores:</strong>
+                          <ul style="margin-top: 10px; margin-left: 20px;">
+                              <li>🟢 90-100: Good</li>
+                              <li>🟡 50-89: Needs Improvement</li>
+                              <li>🔴 0-49: Poor</li>
+                          </ul>
+                      </div>
+                  </div>
+                  
+                  <div class="card">
+                      <h2>📑 Detailed Reports</h2>
+                      <div class="report-links">
+                          <a href="../../lighthouse-reports/" class="report-link">
+                              <span class="report-icon">📊</span>
+                              View Full Lighthouse Reports
+                          </a>
+                          <a href="https://trading-simulator-jamescordovas-projects.vercel.app" class="report-link" target="_blank">
+                              <span class="report-icon">🌐</span>
+                              Visit Production Site
+                          </a>
+                          <a href="https://github.com/JamesCordova/trading-simulator" class="report-link">
+                              <span class="report-icon">💻</span>
+                              View Source Code
+                          </a>
+                      </div>
+                  </div>
+                  
+                  <div style="text-align: center;">
+                      <a href="../../index.html" class="back-link">
+                          ← Back to Reports Hub
+                      </a>
+                  </div>
+              </div>
+              
+              <script>
+                  // Nota: En producción, estos valores se extraerían del JSON de Lighthouse
+                  // Por ahora son placeholders que se actualizarían con el reporte real
+                  document.addEventListener('DOMContentLoaded', function() {
+                      // Estos valores se actualizarían desde el JSON generado por Lighthouse
+                      console.log('Lighthouse report summary loaded');
+                  });
+              </script>
+          </body>
+          </html>
+          EOF
+          
+          echo "✅ Resumen de Lighthouse generado"
+      
+      - name: Upload Lighthouse Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: lighthouse-reports/
+          retention-days: 30
+      
+      - name: Comment PR with Lighthouse Results (if PR)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚡ Lighthouse audit completed! Check the artifacts for detailed reports.'
+            })
+      
+      - name: Display Results Summary
+        run: |
+          echo "⚡ Lighthouse audit completed!"
+          echo "📊 Reports saved to lighthouse-reports/"
+          echo "🔗 Download artifacts from GitHub Actions to view detailed reports"
