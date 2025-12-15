@@ -132,6 +132,7 @@ jobs:
           path: all-reports
           pattern: playwright-report-*
           merge-multiple: true
+        continue-on-error: true
       
       - name: Download all results
         uses: actions/download-artifact@v4
@@ -139,36 +140,68 @@ jobs:
           path: all-results
           pattern: playwright-results-*
           merge-multiple: true
+        continue-on-error: true
+      
+      - name: Debug artifact contents
+        run: |
+          echo "=== Checking downloaded artifacts ==="
+          echo "Reports directory:"
+          ls -la all-reports/ || echo "No all-reports directory"
+          echo ""
+          echo "Results directory:"
+          ls -la all-results/ || echo "No all-results directory"
+          echo ""
+          echo "Finding all downloaded files:"
+          find . -name "*.json" -o -name "*.xml" -o -name "*.html" || echo "No report files found"
       
       - name: Merge reports
         run: |
           mkdir -p playwright-report
           
-          # Intentar merge de reportes HTML si existe el comando
-          if command -v npx playwright merge-reports &> /dev/null; then
-            npx playwright merge-reports --reporter html ./all-reports > playwright-report/index.html || true
+          # Verificar si hay reportes
+          if [ -d "all-reports" ] && [ "$(ls -A all-reports)" ]; then
+            echo "Found reports, attempting to merge..."
+            ls -la all-reports/
+            
+            # Copiar todos los archivos de reportes
+            cp -r all-reports/* playwright-report/ 2>/dev/null || true
+          else
+            echo "No reports found to merge"
           fi
           
-          # Copiar resultados
-          if [ -d "all-results" ]; then
-            cp -r all-results/* playwright-report/ || true
+          # Copiar resultados JSON/XML
+          if [ -d "all-results" ] && [ "$(ls -A all-results)" ]; then
+            echo "Found results, copying..."
+            cp -r all-results/* playwright-report/ 2>/dev/null || true
+          else
+            echo "No results found to copy"
           fi
+          
+          # Crear un archivo de resumen si no hay nada
+          if [ ! "$(ls -A playwright-report)" ]; then
+            echo "<h1>No test reports available</h1>" > playwright-report/index.html
+            echo "Check individual shard reports for details." >> playwright-report/index.html
+          fi
+        continue-on-error: true
       
       - name: Upload merged report
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: playwright-report
+          name: playwright-report-merged
           path: playwright-report/
           retention-days: 30
       
       - name: Generate Combined Summary
+        if: always()
         run: |
           echo "## 🎭 Combined Playwright Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ Tests executed across 4 parallel shards for faster execution" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📁 [View Merged Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-                repo: context.repo.repo,
-                body: body
-              });
-            }
+          
+          # Contar archivos de reporte
+          REPORT_COUNT=$(find all-reports all-results -type f 2>/dev/null | wc -l || echo "0")
+          echo "� Found $REPORT_COUNT report files from shards" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "�📁 [View Full Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
