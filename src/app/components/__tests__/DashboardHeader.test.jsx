@@ -109,6 +109,15 @@ describe('DashboardHeader Component', () => {
       expect(mockProps.onSignOut).toHaveBeenCalled()
     })
 
+    it('renders Profile and Settings options in user menu', () => {
+      render(<DashboardHeader {...mockProps} />)
+      const userButton = screen.getByText('John Doe').closest('button')
+      fireEvent.click(userButton)
+      
+      expect(screen.getByText('Profile')).toBeInTheDocument()
+      expect(screen.getByText('Settings')).toBeInTheDocument()
+    })
+
     it('closes user menu when clicking outside', async () => {
       render(<DashboardHeader {...mockProps} />)
       const userButton = screen.getByText('John Doe').closest('button')
@@ -147,6 +156,53 @@ describe('DashboardHeader Component', () => {
         fireEvent.click(mobileMenuButton)
         // Menu should be visible after click
         expect(mobileMenuButton).toBeInTheDocument()
+      }
+    })
+
+    it('renders mobile navigation tabs when menu is open', () => {
+      render(<DashboardHeader {...mockProps} />)
+      const buttons = screen.getAllByRole('button')
+      const mobileMenuButton = buttons.find(btn => {
+        const svg = btn.querySelector('svg')
+        return svg && (svg.classList.contains('lucide-menu') || svg.classList.contains('lucide-x'))
+      })
+      
+      if (mobileMenuButton) {
+        // Initially, mobile tabs should not be visible
+        expect(screen.queryByText('Portfolio')).toBeInTheDocument() // Desktop tab is visible
+        expect(screen.queryAllByText('Watchlist').length).toBe(1) // Only desktop
+        
+        // Click to open mobile menu
+        fireEvent.click(mobileMenuButton)
+        
+        // Now mobile tabs should be visible (additional instances)
+        const watchlistTabs = screen.getAllByText('Watchlist')
+        expect(watchlistTabs.length).toBeGreaterThan(1) // Desktop + mobile
+      }
+    })
+
+    it('calls onTabChange when clicking mobile tab', () => {
+      render(<DashboardHeader {...mockProps} />)
+      const buttons = screen.getAllByRole('button')
+      const mobileMenuButton = buttons.find(btn => {
+        const svg = btn.querySelector('svg')
+        return svg && (svg.classList.contains('lucide-menu') || svg.classList.contains('lucide-x'))
+      })
+      
+      if (mobileMenuButton) {
+        // Open mobile menu
+        fireEvent.click(mobileMenuButton)
+        
+        // Find mobile Watchlist tab (should be multiple now)
+        const watchlistTabs = screen.getAllByText('Watchlist')
+        const mobileWatchlistTab = watchlistTabs.find(tab => 
+          tab.closest('[class*="lg:hidden"]') // Mobile menu container
+        )
+        
+        if (mobileWatchlistTab) {
+          fireEvent.click(mobileWatchlistTab)
+          expect(mockProps.onTabChange).toHaveBeenCalledWith('Watchlist')
+        }
       }
     })
   })
