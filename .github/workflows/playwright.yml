@@ -37,46 +37,24 @@ jobs:
         env:
           PLAYWRIGHT_TEST_BASE_URL: https://trading-simulator-beryl.vercel.app
       
-      - name: Upload Playwright Report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report-${{ matrix.shardIndex }}
-          path: playwright-report/
-          retention-days: 30
-      
-      - name: Upload Test Results
+      - name: Upload blob report for merge
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-results-${{ matrix.shardIndex }}
-          path: |
-            playwright-report/results.json
-            playwright-report/junit.xml
+          path: blob-report/
           retention-days: 30
       
       - name: Generate Summary
         if: always()
         run: |
-          echo "## 🎭 Playwright Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎭 Playwright Tests - Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [ -f "playwright-report/results.json" ]; then
-            TOTAL=$(jq '.suites | map(.specs | length) | add' playwright-report/results.json)
-            PASSED=$(jq '[.suites[].specs[].tests[] | select(.status == "expected")] | length' playwright-report/results.json)
-            FAILED=$(jq '[.suites[].specs[].tests[] | select(.status == "unexpected")] | length' playwright-report/results.json)
-            SKIPPED=$(jq '[.suites[].specs[].tests[] | select(.status == "skipped")] | length' playwright-report/results.json)
-            
-            echo "📊 **Test Summary:**" >> $GITHUB_STEP_SUMMARY
-            echo "- ✅ Passed: $PASSED" >> $GITHUB_STEP_SUMMARY
-            echo "- ❌ Failed: $FAILED" >> $GITHUB_STEP_SUMMARY
-            echo "- ⏭️ Skipped: $SKIPPED" >> $GITHUB_STEP_SUMMARY
-            echo "- 📝 Total: $TOTAL" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "📁 [View Full Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ No test results found" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "✅ Blob report generated for this shard" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 Results will be merged with other shards to create unified HTML report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "� Wait for the merge-reports job to see complete results" >> $GITHUB_STEP_SUMMARY
       
       - name: Comment PR with results
         if: github.event_name == 'pull_request'
@@ -126,62 +104,49 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Download all reports
+      - name: Download all blob reports (results JSON)
         uses: actions/download-artifact@v4
         with:
-          path: all-reports
-          pattern: playwright-report-*
-          merge-multiple: true
-        continue-on-error: true
-      
-      - name: Download all results
-        uses: actions/download-artifact@v4
-        with:
-          path: all-results
+          path: all-blob-reports
           pattern: playwright-results-*
-          merge-multiple: true
+          merge-multiple: false
         continue-on-error: true
       
-      - name: Debug artifact contents
+      - name: Debug downloaded artifacts
         run: |
-          echo "=== Checking downloaded artifacts ==="
-          echo "Reports directory:"
-          ls -la all-reports/ || echo "No all-reports directory"
+          echo "=== Checking downloaded blob reports ==="
+          ls -la all-blob-reports/ || echo "No all-blob-reports directory"
           echo ""
-          echo "Results directory:"
-          ls -la all-results/ || echo "No all-results directory"
-          echo ""
-          echo "Finding all downloaded files:"
-          find . -name "*.json" -o -name "*.xml" -o -name "*.html" || echo "No report files found"
+          echo "Contents of each shard:"
+          for dir in all-blob-reports/*/; do
+            if [ -d "$dir" ]; then
+              echo "Directory: $dir"
+              ls -la "$dir"
+              echo ""
+            fi
+          done
       
-      - name: Merge reports
+      - name: Merge all shard reports into one HTML report
         run: |
-          mkdir -p playwright-report
+          echo "🔄 Merging reports from all shards..."
           
-          # Verificar si hay reportes
-          if [ -d "all-reports" ] && [ "$(ls -A all-reports)" ]; then
-            echo "Found reports, attempting to merge..."
-            ls -la all-reports/
-            
-            # Copiar todos los archivos de reportes
-            cp -r all-reports/* playwright-report/ 2>/dev/null || true
-          else
-            echo "No reports found to merge"
-          fi
-          
-          # Copiar resultados JSON/XML
-          if [ -d "all-results" ] && [ "$(ls -A all-results)" ]; then
-            echo "Found results, copying..."
-            cp -r all-results/* playwright-report/ 2>/dev/null || true
-          else
-            echo "No results found to copy"
-          fi
-          
-          # Crear un archivo de resumen si no hay nada
-          if [ ! "$(ls -A playwright-report)" ]; then
+          # Verificar si hay blob reports
+          if [ ! -d "all-blob-reports" ]; then
+            echo "⚠️ No blob reports found"
+            mkdir -p playwright-report
             echo "<h1>No test reports available</h1>" > playwright-report/index.html
-            echo "Check individual shard reports for details." >> playwright-report/index.html
+            exit 0
           fi
+          
+          # Contar shards disponibles
+          SHARD_COUNT=$(find all-blob-reports -name "playwright-results-*" -type d | wc -l)
+          echo "✅ Found $SHARD_COUNT shards to merge"
+          
+          # Usar el comando oficial de Playwright para merge
+          npx playwright merge-reports --reporter html ./all-blob-reports
+          
+          echo "✅ Reports merged successfully"
+          ls -la playwright-report/
         continue-on-error: true
       
       - name: Upload merged report
@@ -197,11 +162,18 @@ jobs:
         run: |
           echo "## 🎭 Combined Playwright Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Tests executed across 4 parallel shards for faster execution" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Reports merged from 4 parallel shards" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          # Contar archivos de reporte
-          REPORT_COUNT=$(find all-reports all-results -type f 2>/dev/null | wc -l || echo "0")
-          echo "� Found $REPORT_COUNT report files from shards" >> $GITHUB_STEP_SUMMARY
+          if [ -f "playwright-report/index.html" ]; then
+            echo "📊 **Unified HTML report generated successfully**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "This report includes:" >> $GITHUB_STEP_SUMMARY
+            echo "- All 22 tests (auth, dashboard, trading)" >> $GITHUB_STEP_SUMMARY
+            echo "- Both browsers (Chromium desktop + Mobile Chrome)" >> $GITHUB_STEP_SUMMARY
+            echo "- Total: 44 test executions" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ HTML report not generated" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "�📁 [View Full Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "� [View Artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY

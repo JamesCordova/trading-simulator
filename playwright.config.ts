@@ -29,7 +29,12 @@ export default defineConfig({
   workers: process.env.CI ? 4 : undefined,  // 4 workers en CI, todos los CPUs disponibles en local
   
   /* Reporter para generar reportes HTML y JSON */
-  reporter: [
+  reporter: process.env.CI ? [
+    // En CI: solo blob reporter para merge posterior
+    ['blob'],
+    ['list']
+  ] : [
+    // Local: reportes completos
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
     ['json', { outputFile: 'playwright-report/results.json' }],
     ['junit', { outputFile: 'playwright-report/junit.xml' }],
