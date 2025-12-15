@@ -109,7 +109,7 @@ jobs:
         with:
           path: all-blob-reports
           pattern: playwright-results-*
-          merge-multiple: false
+          merge-multiple: true
         continue-on-error: true
       
       - name: Debug downloaded artifacts
@@ -117,14 +117,10 @@ jobs:
           echo "=== Checking downloaded blob reports ==="
           ls -la all-blob-reports/ || echo "No all-blob-reports directory"
           echo ""
-          echo "Contents of each artifact:"
-          for dir in all-blob-reports/*/; do
-            if [ -d "$dir" ]; then
-              echo "Directory: $dir"
-              ls -la "$dir"
-              echo ""
-            fi
-          done
+          echo "Contents of blob reports:"
+          ls -la all-blob-reports/*.zip 2>/dev/null || echo "No zip files found"
+          echo ""
+          find all-blob-reports -name "*.zip" -type f || echo "No report zips found"
       
       - name: Merge all shard reports into one HTML report
         run: |
@@ -139,13 +135,12 @@ jobs:
             exit 0
           fi
           
-          # Contar artifacts disponibles
-          SHARD_COUNT=$(ls -1 all-blob-reports | wc -l)
-          echo "✅ Found $SHARD_COUNT blob report artifacts"
+          # Contar archivos zip
+          ZIP_COUNT=$(find all-blob-reports -name "*.zip" -type f | wc -l)
+          echo "✅ Found $ZIP_COUNT blob report files"
           
-          # El comando merge-reports espera directorios con blob reports
-          # La estructura es: all-blob-reports/playwright-results-1/, playwright-results-2/, etc.
-          # Cada uno contiene los archivos .zip del blob report
+          # merge-multiple: true pone todos los zips en el mismo directorio
+          # Playwright merge-reports espera exactamente eso
           npx playwright merge-reports --reporter html ./all-blob-reports
           
           if [ -f "playwright-report/index.html" ]; then
