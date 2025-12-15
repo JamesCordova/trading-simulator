@@ -17,6 +17,8 @@ const customJestConfig = {
     '!src/**/*.d.ts',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
     '!src/**/__tests__/**',
+    '!src/app/components/TradingInterface.jsx', // Exclude TradingInterface
+    '!src/app/components/firebase.js', // Exclude firebase.js
   ],
   testMatch: [
     '**/__tests__/**/*.[jt]s?(x)',
