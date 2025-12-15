@@ -104,7 +104,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Download all blob reports (results JSON)
+      - name: Download all blob reports
         uses: actions/download-artifact@v4
         with:
           path: all-blob-reports
@@ -117,7 +117,7 @@ jobs:
           echo "=== Checking downloaded blob reports ==="
           ls -la all-blob-reports/ || echo "No all-blob-reports directory"
           echo ""
-          echo "Contents of each shard:"
+          echo "Contents of each artifact:"
           for dir in all-blob-reports/*/; do
             if [ -d "$dir" ]; then
               echo "Directory: $dir"
@@ -131,22 +131,31 @@ jobs:
           echo "🔄 Merging reports from all shards..."
           
           # Verificar si hay blob reports
-          if [ ! -d "all-blob-reports" ]; then
+          if [ ! -d "all-blob-reports" ] || [ -z "$(ls -A all-blob-reports 2>/dev/null)" ]; then
             echo "⚠️ No blob reports found"
             mkdir -p playwright-report
             echo "<h1>No test reports available</h1>" > playwright-report/index.html
+            echo "<p>Blob reports were not generated. Check the test-e2e job logs.</p>" >> playwright-report/index.html
             exit 0
           fi
           
-          # Contar shards disponibles
-          SHARD_COUNT=$(find all-blob-reports -name "playwright-results-*" -type d | wc -l)
-          echo "✅ Found $SHARD_COUNT shards to merge"
+          # Contar artifacts disponibles
+          SHARD_COUNT=$(ls -1 all-blob-reports | wc -l)
+          echo "✅ Found $SHARD_COUNT blob report artifacts"
           
-          # Usar el comando oficial de Playwright para merge
+          # El comando merge-reports espera directorios con blob reports
+          # La estructura es: all-blob-reports/playwright-results-1/, playwright-results-2/, etc.
+          # Cada uno contiene los archivos .zip del blob report
           npx playwright merge-reports --reporter html ./all-blob-reports
           
-          echo "✅ Reports merged successfully"
-          ls -la playwright-report/
+          if [ -f "playwright-report/index.html" ]; then
+            echo "✅ Reports merged successfully"
+            ls -la playwright-report/
+          else
+            echo "⚠️ Merge completed but no HTML report generated"
+            mkdir -p playwright-report
+            echo "<h1>Report merge failed</h1>" > playwright-report/index.html
+          fi
         continue-on-error: true
       
       - name: Upload merged report
