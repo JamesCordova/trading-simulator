@@ -97,6 +97,13 @@ jobs:
           name: test-reports
           path: ./reports
       
+      - name: Download Playwright artifacts
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: playwright-report
+          path: ./reports/playwright-report
+      
       - name: Download Lighthouse artifacts from API
         continue-on-error: true
         env:
@@ -268,6 +275,12 @@ jobs:
                               <div class="link-desc">Performance & SEO metrics</div>
                           </a>
                           
+                          <a href="playwright/" class="link-card" style="background: linear-gradient(135deg, #2d7d46 0%, #45a049 100%);">
+                              <div class="link-icon">🎭</div>
+                              <div class="link-title">Playwright E2E</div>
+                              <div class="link-desc">End-to-end test results</div>
+                          </a>
+                          
                           <a href="https://github.com/JamesCordova/trading-simulator" class="link-card">
                               <div class="link-icon">💻</div>
                               <div class="link-title">Source Code</div>
@@ -351,6 +364,27 @@ jobs:
             
             mkdir -p public/lighthouse/summary
             echo "<h1>Lighthouse reports not available yet</h1><p>The Lighthouse workflow may still be running. Check back in a few minutes.</p>" > public/lighthouse/summary/index.html
+          fi
+          
+          # Copiar reportes de Playwright
+          echo "🎭 Procesando reportes de Playwright..."
+          if [ -d "reports/playwright-report" ]; then
+            echo "✅ Directorio playwright-report encontrado"
+            mkdir -p public/playwright
+            
+            if [ "$(ls -A reports/playwright-report/)" ]; then
+              cp -r reports/playwright-report/* public/playwright/
+              echo "✅ Reportes de Playwright copiados"
+              ls -la public/playwright/
+            else
+              echo "⚠️ playwright-report está vacío"
+              mkdir -p public/playwright
+              echo "<h1>Playwright reports not available yet</h1><p>E2E tests will run on the next push.</p>" > public/playwright/index.html
+            fi
+          else
+            echo "⚠️ No se encontró reports/playwright-report"
+            mkdir -p public/playwright
+            echo "<h1>Playwright reports not available yet</h1><p>E2E tests will run on the next push.</p>" > public/playwright/index.html
           fi
           
           # Crear página de badges de SonarCloud
