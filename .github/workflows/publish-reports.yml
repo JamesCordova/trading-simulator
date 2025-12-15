@@ -52,13 +52,6 @@ jobs:
           name: sonarcloud-results
           path: sonarcloud-results/
       
-      - name: Download Lighthouse artifacts (if available)
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: lighthouse-reports
-          path: lighthouse-reports/
-      
       - name: Generate dashboard
         env:
           GITHUB_SHA: ${{ github.sha }}
@@ -75,7 +68,6 @@ jobs:
             coverage/
             dashboard/
             test-results/
-            lighthouse-reports/
           retention-days: 30
   
   deploy-to-pages:
@@ -92,6 +84,13 @@ jobs:
         with:
           name: test-reports
           path: ./reports
+      
+      - name: Download Lighthouse artifacts
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: lighthouse-reports
+          path: ./reports/lighthouse-reports
       
       - name: Create Pages structure
         run: |
@@ -270,10 +269,19 @@ jobs:
           fi
           
           if [ -d "reports/lighthouse-reports" ]; then
-            cp -r reports/lighthouse-reports public/lighthouse
+            # Copiar todo el contenido de lighthouse-reports a public/lighthouse
+            mkdir -p public/lighthouse
+            cp -r reports/lighthouse-reports/* public/lighthouse/ 2>/dev/null || echo "⚠️ Contenido de lighthouse vacío"
+            
+            # Verificar estructura
+            echo "📁 Estructura de Lighthouse:"
+            ls -la public/lighthouse/ || echo "Directorio vacío"
+            
             echo "✅ Reportes de Lighthouse copiados"
           else
             echo "⚠️ No hay reportes de Lighthouse"
+            mkdir -p public/lighthouse/summary
+            echo "<h1>Lighthouse reports not available yet</h1><p>Reports will be generated after the next deployment.</p>" > public/lighthouse/summary/index.html
           fi
           
           # Crear página de badges de SonarCloud
