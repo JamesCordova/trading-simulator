@@ -17,6 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -55,24 +60,95 @@ jobs:
       
       - name: Run Lighthouse CI
         run: |
-          mkdir -p lighthouse-reports
+          mkdir -p lighthouse-reports/reports
           
           VERCEL_URL="${{ steps.get-url.outputs.url }}"
           echo "🚀 Ejecutando Lighthouse en: $VERCEL_URL"
           
-          # Ejecutar Lighthouse en la URL de producción usando la configuración
+          # Ejecutar Lighthouse directamente para tener más control sobre los reportes
           lhci autorun \
             --collect.url="$VERCEL_URL" \
             --collect.settings.chromeFlags="--no-sandbox --headless --disable-gpu" \
+            --upload.target=filesystem \
+            --upload.outputDir=./lighthouse-reports/reports \
             --config=./lighthouserc.json
+          
+          echo "📊 Reportes generados en lighthouse-reports/reports/"
+          ls -la ./lighthouse-reports/reports/ || echo "No se generaron reportes"
+        continue-on-error: true
+      
+      - name: Extract Lighthouse Metrics
+        run: |
+          # Buscar el último reporte JSON generado
+          LATEST_JSON=$(find .lighthouseci -name "lhr-*.json" 2>/dev/null | sort | tail -1)
+          
+          if [ -z "$LATEST_JSON" ]; then
+            echo "⚠️ No se encontró archivo JSON de Lighthouse"
+            echo "PERF_SCORE=0" >> $GITHUB_ENV
+            echo "ACCESS_SCORE=0" >> $GITHUB_ENV
+            echo "BEST_SCORE=0" >> $GITHUB_ENV
+            echo "SEO_SCORE=0" >> $GITHUB_ENV
+            echo "PWA_SCORE=0" >> $GITHUB_ENV
+            exit 0
+          fi
+          
+          echo "📊 Extrayendo métricas de: $LATEST_JSON"
+          
+          # Extraer scores usando jq (valores de 0-1 convertidos a 0-100)
+          PERF_SCORE=$(cat "$LATEST_JSON" | jq -r '(.categories.performance.score // 0) * 100 | floor')
+          ACCESS_SCORE=$(cat "$LATEST_JSON" | jq -r '(.categories.accessibility.score // 0) * 100 | floor')
+          BEST_SCORE=$(cat "$LATEST_JSON" | jq -r '(.categories."best-practices".score // 0) * 100 | floor')
+          SEO_SCORE=$(cat "$LATEST_JSON" | jq -r '(.categories.seo.score // 0) * 100 | floor')
+          PWA_SCORE=$(cat "$LATEST_JSON" | jq -r '(.categories.pwa.score // 0) * 100 | floor')
+          
+          # Guardar en environment para el siguiente step
+          echo "PERF_SCORE=$PERF_SCORE" >> $GITHUB_ENV
+          echo "ACCESS_SCORE=$ACCESS_SCORE" >> $GITHUB_ENV
+          echo "BEST_SCORE=$BEST_SCORE" >> $GITHUB_ENV
+          echo "SEO_SCORE=$SEO_SCORE" >> $GITHUB_ENV
+          echo "PWA_SCORE=$PWA_SCORE" >> $GITHUB_ENV
+          
+          echo "✅ Métricas extraídas:"
+          echo "   Performance: $PERF_SCORE"
+          echo "   Accessibility: $ACCESS_SCORE"
+          echo "   Best Practices: $BEST_SCORE"
+          echo "   SEO: $SEO_SCORE"
+          echo "   PWA: $PWA_SCORE"
+        continue-on-error: true
+      
+      - name: Copy HTML Reports
+        run: |
+          # Copiar todos los reportes HTML generados por Lighthouse
+          if [ -d ".lighthouseci" ]; then
+            echo "📊 Copiando reportes HTML..."
+            mkdir -p lighthouse-reports/reports
+            
+            # Copiar archivos HTML
+            find .lighthouseci -name "*.html" -exec cp {} lighthouse-reports/reports/ \;
+            
+            # Copiar archivos JSON
+            find .lighthouseci -name "*.json" -exec cp {} lighthouse-reports/reports/ \;
+            
+            echo "✅ Reportes copiados:"
+            ls -la lighthouse-reports/reports/
+          else
+            echo "⚠️ No se encontró directorio .lighthouseci"
+          fi
         continue-on-error: true
       
       - name: Generate Lighthouse Report Summary
         run: |
           mkdir -p lighthouse-reports/summary
           
-          # Crear página HTML con resumen de Lighthouse
-          cat > lighthouse-reports/summary/index.html << 'EOF'
+          # Usar las métricas extraídas (o valores por defecto si no existen)
+          PERF=${PERF_SCORE:-0}
+          ACCESS=${ACCESS_SCORE:-0}
+          BEST=${BEST_SCORE:-0}
+          SEO=${SEO_SCORE:-0}
+          PWA=${PWA_SCORE:-0}
+          
+          # Crear página HTML con resumen de Lighthouse usando las métricas reales
+          cat > lighthouse-reports/summary/index.html << EOF
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -227,27 +303,27 @@ jobs:
                           <div class="metric-card">
                               <div class="metric-icon">⚡</div>
                               <div class="metric-title">Performance</div>
-                              <div class="metric-score score-good" id="performance-score">--</div>
+                              <div class="metric-score score-good" id="performance-score">$PERF</div>
                           </div>
                           <div class="metric-card">
                               <div class="metric-icon">♿</div>
                               <div class="metric-title">Accessibility</div>
-                              <div class="metric-score score-good" id="accessibility-score">--</div>
+                              <div class="metric-score score-good" id="accessibility-score">$ACCESS</div>
                           </div>
                           <div class="metric-card">
                               <div class="metric-icon">✅</div>
                               <div class="metric-title">Best Practices</div>
-                              <div class="metric-score score-good" id="best-practices-score">--</div>
+                              <div class="metric-score score-good" id="best-practices-score">$BEST</div>
                           </div>
                           <div class="metric-card">
                               <div class="metric-icon">🔍</div>
                               <div class="metric-title">SEO</div>
-                              <div class="metric-score score-good" id="seo-score">--</div>
+                              <div class="metric-score score-good" id="seo-score">$SEO</div>
                           </div>
                           <div class="metric-card">
                               <div class="metric-icon">📱</div>
                               <div class="metric-title">PWA</div>
-                              <div class="metric-score score-average" id="pwa-score">--</div>
+                              <div class="metric-score score-average" id="pwa-score">$PWA</div>
                           </div>
                       </div>
                       
@@ -264,9 +340,9 @@ jobs:
                   <div class="card">
                       <h2>📑 Detailed Reports</h2>
                       <div class="report-links">
-                          <a href="../../lighthouse-reports/" class="report-link">
+                          <a href="../reports/" class="report-link">
                               <span class="report-icon">📊</span>
-                              View Full Lighthouse Reports
+                              View All Lighthouse Reports
                           </a>
                           <a href="https://trading-simulator-beryl.vercel.app" class="report-link" target="_blank">
                               <span class="report-icon">🌐</span>
@@ -299,6 +375,104 @@ jobs:
           EOF
           
           echo "✅ Resumen de Lighthouse generado"
+      
+      - name: Create Reports Index
+        run: |
+          mkdir -p lighthouse-reports/reports
+          
+          cat > lighthouse-reports/reports/index.html << 'INDEXEOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Lighthouse Reports - Trading Simulator</title>
+              <style>
+                  * { margin: 0; padding: 0; box-sizing: border-box; }
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                      padding: 40px 20px;
+                  }
+                  .container { max-width: 1000px; margin: 0 auto; }
+                  .card {
+                      background: white;
+                      border-radius: 15px;
+                      padding: 30px;
+                      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                  }
+                  h1 { color: #2d3748; margin-bottom: 20px; }
+                  .file-list { list-style: none; margin-top: 20px; }
+                  .file-item {
+                      padding: 15px;
+                      margin: 10px 0;
+                      background: #f7fafc;
+                      border-radius: 8px;
+                      transition: all 0.3s;
+                  }
+                  .file-item:hover { background: #edf2f7; transform: translateX(5px); }
+                  .file-item a {
+                      text-decoration: none;
+                      color: #667eea;
+                      font-weight: 600;
+                      display: flex;
+                      align-items: center;
+                      gap: 10px;
+                  }
+                  .back-link {
+                      display: inline-block;
+                      margin-top: 20px;
+                      padding: 12px 24px;
+                      background: #667eea;
+                      color: white;
+                      text-decoration: none;
+                      border-radius: 8px;
+                      font-weight: 600;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="card">
+                      <h1>📊 Lighthouse Reports</h1>
+                      <p>Individual Lighthouse HTML reports for each audit run.</p>
+                      <ul class="file-list" id="fileList">
+                          <li class="file-item">Loading reports...</li>
+                      </ul>
+                      <a href="../summary/" class="back-link">← Back to Summary</a>
+                  </div>
+              </div>
+              <script>
+                  // Listar archivos HTML automáticamente
+                  fetch('.')
+                      .then(response => response.text())
+                      .then(html => {
+                          const parser = new DOMParser();
+                          const doc = parser.parseFromString(html, 'text/html');
+                          const links = Array.from(doc.querySelectorAll('a'))
+                              .map(a => a.getAttribute('href'))
+                              .filter(href => href && href.endsWith('.html') && href !== 'index.html');
+                          
+                          const fileList = document.getElementById('fileList');
+                          if (links.length === 0) {
+                              fileList.innerHTML = '<li class="file-item">No HTML reports found. They will appear after the next Lighthouse run.</li>';
+                          } else {
+                              fileList.innerHTML = links.map(file => 
+                                  \`<li class="file-item"><a href="\${file}">📄 \${file}</a></li>\`
+                              ).join('');
+                          }
+                      })
+                      .catch(() => {
+                          document.getElementById('fileList').innerHTML = 
+                              '<li class="file-item">Unable to list reports automatically. Check the artifacts section in GitHub Actions.</li>';
+                      });
+              </script>
+          </body>
+          </html>
+          INDEXEOF
+          
+          echo "✅ Índice de reportes creado"
       
       - name: Upload Lighthouse Reports
         uses: actions/upload-artifact@v4
