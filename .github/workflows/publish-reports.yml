@@ -8,8 +8,6 @@ on:
     workflows: ["Playwright E2E Tests", "Lighthouse Performance Audit"]
     types:
       - completed
-  # También se ejecuta en push, pero con delay
-  push:
     branches: [ main ]
 
 # Permisos necesarios para GitHub Pages
@@ -183,6 +181,7 @@ jobs:
             
             # Intentar descargar todos los shards y combinarlos
             mkdir -p ./reports/playwright-report
+            TEMP_DIR=$(mktemp -d)
             
             for i in 1 2 3 4; do
               SHARD_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
@@ -197,15 +196,29 @@ jobs:
                   -o "playwright-shard-$i.zip"
                 
                 if [ -f "playwright-shard-$i.zip" ]; then
-                  unzip -q "playwright-shard-$i.zip" -d "./reports/playwright-report/shard-$i"
+                  # Extraer cada shard en un directorio temporal
+                  mkdir -p "$TEMP_DIR/shard-$i"
+                  unzip -q "playwright-shard-$i.zip" -d "$TEMP_DIR/shard-$i"
                   echo "✅ Shard $i extraído"
+                  
+                  # Copiar todos los archivos HTML al directorio final (los reportes)
+                  if [ -d "$TEMP_DIR/shard-$i" ]; then
+                    # Copiar todo el contenido, sobrescribiendo duplicados
+                    cp -r "$TEMP_DIR/shard-$i"/* ./reports/playwright-report/ 2>/dev/null || true
+                  fi
+                  
+                  rm "playwright-shard-$i.zip"
                 fi
               fi
             done
             
+            # Limpiar directorio temporal
+            rm -rf "$TEMP_DIR"
+            
             # Verificar si descargamos algo
             if [ "$(ls -A ./reports/playwright-report/ 2>/dev/null)" ]; then
-              echo "✅ Shards descargados y extraídos"
+              echo "✅ Shards combinados en un solo directorio"
+              echo "📁 Archivos en playwright-report:"
               ls -la ./reports/playwright-report/
               exit 0
             else
