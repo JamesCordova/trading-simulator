@@ -3,9 +3,9 @@ name: Publish Test Reports to GitHub Pages
 on:
   # Se ejecuta manualmente
   workflow_dispatch:
-  # Se ejecuta después de que Lighthouse termine
+  # Se ejecuta después de que Playwright termine
   workflow_run:
-    workflows: ["Lighthouse Performance Audit"]
+    workflows: ["Playwright E2E Tests", "Lighthouse Performance Audit"]
     types:
       - completed
   # También se ejecuta en push, pero con delay
@@ -91,18 +91,93 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq unzip
       
+      - name: List available artifacts
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Listando artifacts disponibles en este workflow run..."
+          CURRENT_RUN_ID="${{ github.run_id }}"
+          
+          # Si estamos en un workflow_run, usar el run_id del workflow que nos disparó
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            CURRENT_RUN_ID="${{ github.event.workflow_run.id }}"
+            echo "📌 Workflow disparado por: ${{ github.event.workflow_run.name }}"
+          fi
+          
+          curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$CURRENT_RUN_ID/artifacts" \
+            | jq -r '.artifacts[] | "- \(.name) (\(.size_in_bytes) bytes)"'
+      
       - name: Download test artifacts
         uses: actions/download-artifact@v4
         with:
           name: test-reports
           path: ./reports
       
-      - name: Download Playwright artifacts
+      - name: Download Playwright merged report
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          name: playwright-report
+          name: playwright-report-merged
           path: ./reports/playwright-report
+      
+      - name: Download Playwright artifacts from API (fallback)
+        if: failure() || cancelled()
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Si el merged report no existe, buscar el último run exitoso de Playwright
+          echo "🔍 Buscando el último run de Playwright..."
+          
+          PLAYWRIGHT_RUN=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/playwright.yml/runs?status=success&per_page=1" \
+            | jq -r '.workflow_runs[0].id')
+          
+          if [ "$PLAYWRIGHT_RUN" = "null" ] || [ -z "$PLAYWRIGHT_RUN" ]; then
+            echo "⚠️ No se encontró ningún run exitoso de Playwright"
+            exit 0
+          fi
+          
+          echo "✅ Run encontrado: $PLAYWRIGHT_RUN"
+          
+          # Obtener el artifact ID del reporte merged
+          ARTIFACT_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$PLAYWRIGHT_RUN/artifacts" \
+            | jq -r '.artifacts[] | select(.name=="playwright-report-merged") | .id')
+          
+          if [ "$ARTIFACT_ID" = "null" ] || [ -z "$ARTIFACT_ID" ]; then
+            echo "⚠️ No se encontró el artifact playwright-report-merged, intentando con shards..."
+            
+            # Intentar descargar el primer shard como fallback
+            ARTIFACT_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runs/$PLAYWRIGHT_RUN/artifacts" \
+              | jq -r '.artifacts[] | select(.name=="playwright-report-1") | .id')
+          fi
+          
+          if [ "$ARTIFACT_ID" = "null" ] || [ -z "$ARTIFACT_ID" ]; then
+            echo "⚠️ No se encontró ningún artifact de Playwright"
+            exit 0
+          fi
+          
+          echo "✅ Artifact ID: $ARTIFACT_ID"
+          
+          # Descargar el artifact
+          mkdir -p ./reports/playwright-report
+          curl -L -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip" \
+            -o playwright-report.zip
+          
+          # Extraer
+          if [ -f "playwright-report.zip" ]; then
+            unzip -q playwright-report.zip -d ./reports/playwright-report
+            echo "✅ Artifact descargado y extraído"
+            ls -la ./reports/playwright-report/
+          else
+            echo "⚠️ No se pudo descargar el artifact"
+          fi
       
       - name: Download Lighthouse artifacts from API
         continue-on-error: true
