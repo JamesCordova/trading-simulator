@@ -49,7 +49,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-results
+          name: playwright-results-${{ matrix.shardIndex }}
           path: |
             playwright-report/results.json
             playwright-report/junit.xml
@@ -131,14 +131,28 @@ jobs:
         with:
           path: all-reports
           pattern: playwright-report-*
+          merge-multiple: true
+      
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results
+          pattern: playwright-results-*
+          merge-multiple: true
       
       - name: Merge reports
         run: |
           mkdir -p playwright-report
-          npx playwright merge-reports --reporter html ./all-reports/playwright-report-* > playwright-report/index.html || true
           
-          # Copiar todos los resultados JSON
-          find all-reports -name "results.json" -exec cat {} \; > playwright-report/results.json || true
+          # Intentar merge de reportes HTML si existe el comando
+          if command -v npx playwright merge-reports &> /dev/null; then
+            npx playwright merge-reports --reporter html ./all-reports > playwright-report/index.html || true
+          fi
+          
+          # Copiar resultados
+          if [ -d "all-results" ]; then
+            cp -r all-results/* playwright-report/ || true
+          fi
       
       - name: Upload merged report
         uses: actions/upload-artifact@v4
