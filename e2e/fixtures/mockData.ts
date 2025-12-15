@@ -5,14 +5,14 @@
 
 export const mockUser = {
   uid: 'test-user-123',
-  email: 'test@example.com',
+  email: 'najawow980@discounp.com',
   displayName: 'Test User',
   photoURL: null,
 };
 
 export const mockUserProfile = {
   uid: 'test-user-123',
-  email: 'test@example.com',
+  email: 'najawow980@discounp.com',
   displayName: 'Test User',
   balance: 100000,
   createdAt: new Date('2024-01-01').toISOString(),

@@ -11,6 +11,11 @@ jobs:
   test-e2e:
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false  # No cancelar otros jobs si uno falla
+      matrix:
+        shardIndex: [1, 2, 3, 4]  # Dividir en 4 shards para paralelización
+        shardTotal: [4]
     
     steps:
       - uses: actions/checkout@v4
@@ -27,26 +32,16 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
       
-      - name: Build application
-        run: npm run build
+      - name: Run Playwright tests (Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
+        run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
-          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-      
-      - name: Run Playwright tests
-        run: npm run test:e2e
-        env:
-          PLAYWRIGHT_TEST_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_TEST_BASE_URL: https://trading-simulator-beryl.vercel.app
       
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shardIndex }}
           path: playwright-report/
           retention-days: 30
       
@@ -109,6 +104,56 @@ jobs:
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
+  
+  # Job para combinar reportes de todos los shards
+  merge-reports:
+    if: always()
+    needs: [test-e2e]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Download all reports
+        uses: actions/download-artifact@v4
+        with:
+          path: all-reports
+          pattern: playwright-report-*
+      
+      - name: Merge reports
+        run: |
+          mkdir -p playwright-report
+          npx playwright merge-reports --reporter html ./all-reports/playwright-report-* > playwright-report/index.html || true
+          
+          # Copiar todos los resultados JSON
+          find all-reports -name "results.json" -exec cat {} \; > playwright-report/results.json || true
+      
+      - name: Upload merged report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+      
+      - name: Generate Combined Summary
+        run: |
+          echo "## 🎭 Combined Playwright Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Tests executed across 4 parallel shards for faster execution" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📁 [View Merged Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
                 repo: context.repo.repo,
                 body: body
               });

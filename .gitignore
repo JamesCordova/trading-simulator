@@ -46,3 +46,8 @@ dashboard/
 test-results/
 extra files/gitlab
 extra files/prompts
+
+# playwright
+/playwright-report/
+/playwright/.cache/
+/test-results/

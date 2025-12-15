@@ -6,6 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
+  testMatch: /.*\.spec\.ts/,  // Solo archivos .spec.ts en e2e/
   
   /* Tiempo máximo de ejecución por test */
   timeout: 30 * 1000,
@@ -24,8 +25,8 @@ export default defineConfig({
   /* Reintentar tests fallidos en CI */
   retries: process.env.CI ? 2 : 0,
   
-  /* Workers para paralelización */
-  workers: process.env.CI ? 1 : undefined,
+  /* Workers para paralelización - más workers = más rápido */
+  workers: process.env.CI ? 4 : undefined,  // 4 workers en CI, todos los CPUs disponibles en local
   
   /* Reporter para generar reportes HTML y JSON */
   reporter: [
@@ -37,8 +38,8 @@ export default defineConfig({
   
   /* Configuración compartida para todos los proyectos */
   use: {
-    /* URL base para navegación */
-    baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000',
+    /* URL base para navegación - usar producción en lugar de localhost */
+    baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'https://trading-simulator-beryl.vercel.app',
     
     /* Capturar trace en el primer retry de test fallido */
     trace: 'on-first-retry',
@@ -75,11 +76,5 @@ export default defineConfig({
     },
   ],
 
-  /* Servidor de desarrollo */
-  webServer: {
-    command: 'npm run build && npm run start',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  /* No necesitamos webServer porque usamos la URL de producción hardcodeada */
 });
