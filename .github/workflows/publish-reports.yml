@@ -1,9 +1,16 @@
 name: Publish Test Reports to GitHub Pages
 
 on:
+  # Se ejecuta manualmente
+  workflow_dispatch:
+  # Se ejecuta después de que Lighthouse termine
+  workflow_run:
+    workflows: ["Lighthouse Performance Audit"]
+    types:
+      - completed
+  # También se ejecuta en push, pero con delay
   push:
     branches: [ main ]
-  workflow_dispatch:
 
 # Permisos necesarios para GitHub Pages
 permissions:
@@ -79,18 +86,63 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq unzip
+      
       - name: Download test artifacts
         uses: actions/download-artifact@v4
         with:
           name: test-reports
           path: ./reports
       
-      - name: Download Lighthouse artifacts
-        uses: actions/download-artifact@v4
+      - name: Download Lighthouse artifacts from API
         continue-on-error: true
-        with:
-          name: lighthouse-reports
-          path: ./reports/lighthouse-reports
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Buscar el último workflow run exitoso de Lighthouse
+          echo "🔍 Buscando el último run de Lighthouse..."
+          
+          LIGHTHOUSE_RUN=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/lighthouse.yml/runs?status=success&per_page=1" \
+            | jq -r '.workflow_runs[0].id')
+          
+          if [ "$LIGHTHOUSE_RUN" = "null" ] || [ -z "$LIGHTHOUSE_RUN" ]; then
+            echo "⚠️ No se encontró ningún run exitoso de Lighthouse"
+            exit 0
+          fi
+          
+          echo "✅ Run encontrado: $LIGHTHOUSE_RUN"
+          
+          # Obtener el artifact ID
+          ARTIFACT_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$LIGHTHOUSE_RUN/artifacts" \
+            | jq -r '.artifacts[] | select(.name=="lighthouse-reports") | .id')
+          
+          if [ "$ARTIFACT_ID" = "null" ] || [ -z "$ARTIFACT_ID" ]; then
+            echo "⚠️ No se encontró el artifact lighthouse-reports"
+            exit 0
+          fi
+          
+          echo "✅ Artifact ID: $ARTIFACT_ID"
+          
+          # Descargar el artifact
+          mkdir -p ./reports/lighthouse-reports
+          curl -L -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip" \
+            -o lighthouse-reports.zip
+          
+          # Extraer
+          if [ -f "lighthouse-reports.zip" ]; then
+            unzip -q lighthouse-reports.zip -d ./reports/lighthouse-reports
+            echo "✅ Artifact descargado y extraído"
+            ls -la ./reports/lighthouse-reports/
+          else
+            echo "⚠️ No se pudo descargar el artifact"
+          fi
       
       - name: Create Pages structure
         run: |

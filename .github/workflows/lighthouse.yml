@@ -1,9 +1,6 @@
 name: Lighthouse Performance Audit
 
 on:
-  # Se ejecuta después de cada push a main (después del deploy de Vercel)
-  push:
-    branches: [ main ]
   # Permite ejecución manual
   workflow_dispatch:
   # Se ejecuta después del workflow de Vercel
