@@ -49,5 +49,6 @@ extra files/prompts
 
 # playwright
 /playwright-report/
+/blob-report/
 /playwright/.cache/
 /test-results/
