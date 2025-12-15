@@ -380,7 +380,11 @@ jobs:
         run: |
           mkdir -p lighthouse-reports/reports
           
-          cat > lighthouse-reports/reports/index.html << 'INDEXEOF'
+          # Generar lista de archivos HTML
+          echo "📊 Generando índice de reportes..."
+          
+          # Iniciar el HTML
+          cat > lighthouse-reports/reports/index.html << 'INDEXHEADER'
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -403,6 +407,7 @@ jobs:
                       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
                   }
                   h1 { color: #2d3748; margin-bottom: 20px; }
+                  p { color: #718096; margin-bottom: 20px; }
                   .file-list { list-style: none; margin-top: 20px; }
                   .file-item {
                       padding: 15px;
@@ -430,6 +435,13 @@ jobs:
                       border-radius: 8px;
                       font-weight: 600;
                   }
+                  .info { 
+                      background: #edf2f7; 
+                      padding: 15px; 
+                      border-radius: 8px; 
+                      margin: 20px 0;
+                      color: #2d3748;
+                  }
               </style>
           </head>
           <body>
@@ -437,42 +449,35 @@ jobs:
                   <div class="card">
                       <h1>📊 Lighthouse Reports</h1>
                       <p>Individual Lighthouse HTML reports for each audit run.</p>
-                      <ul class="file-list" id="fileList">
-                          <li class="file-item">Loading reports...</li>
+                      <ul class="file-list">
+          INDEXHEADER
+          
+          # Buscar y listar archivos HTML
+          HTML_FILES=$(find lighthouse-reports/reports -maxdepth 1 -name "*.html" -not -name "index.html" 2>/dev/null | sort)
+          
+          if [ -z "$HTML_FILES" ]; then
+            echo '<li class="file-item"><div class="info">⚠️ No HTML reports found yet. Reports will be generated after Lighthouse completes its audit.</div></li>' >> lighthouse-reports/reports/index.html
+          else
+            COUNT=0
+            for file in $HTML_FILES; do
+              FILENAME=$(basename "$file")
+              echo "<li class=\"file-item\"><a href=\"$FILENAME\">📄 $FILENAME</a></li>" >> lighthouse-reports/reports/index.html
+              COUNT=$((COUNT + 1))
+            done
+            echo "✅ Encontrados $COUNT reportes HTML"
+          fi
+          
+          # Cerrar el HTML
+          cat >> lighthouse-reports/reports/index.html << 'INDEXFOOTER'
                       </ul>
                       <a href="../summary/" class="back-link">← Back to Summary</a>
                   </div>
               </div>
-              <script>
-                  // Listar archivos HTML automáticamente
-                  fetch('.')
-                      .then(response => response.text())
-                      .then(html => {
-                          const parser = new DOMParser();
-                          const doc = parser.parseFromString(html, 'text/html');
-                          const links = Array.from(doc.querySelectorAll('a'))
-                              .map(a => a.getAttribute('href'))
-                              .filter(href => href && href.endsWith('.html') && href !== 'index.html');
-                          
-                          const fileList = document.getElementById('fileList');
-                          if (links.length === 0) {
-                              fileList.innerHTML = '<li class="file-item">No HTML reports found. They will appear after the next Lighthouse run.</li>';
-                          } else {
-                              fileList.innerHTML = links.map(file => 
-                                  \`<li class="file-item"><a href="\${file}">📄 \${file}</a></li>\`
-                              ).join('');
-                          }
-                      })
-                      .catch(() => {
-                          document.getElementById('fileList').innerHTML = 
-                              '<li class="file-item">Unable to list reports automatically. Check the artifacts section in GitHub Actions.</li>';
-                      });
-              </script>
           </body>
           </html>
-          INDEXEOF
+          INDEXFOOTER
           
-          echo "✅ Índice de reportes creado"
+          echo "✅ Índice de reportes generado"
       
       - name: Upload Lighthouse Reports
         uses: actions/upload-artifact@v4
