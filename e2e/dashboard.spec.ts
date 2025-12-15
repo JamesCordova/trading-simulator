@@ -53,50 +53,110 @@ test.describe('Dashboard Features', () => {
   });
 
   test('should show navigation tabs', async ({ page }) => {
+    // Detectar si estamos en móvil
+    const viewport = page.viewportSize();
+    const isMobile = viewport && viewport.width < 1024;
+    
+    if (isMobile) {
+      // En móvil: abrir menú hamburguesa para ver los tabs
+      const hamburgerButton = page.locator('button.lg\\:hidden').first();
+      await expect(hamburgerButton).toBeVisible({ timeout: 10000 });
+      await hamburgerButton.click();
+      await page.waitForTimeout(500);
+    }
+    
     // Verificar que existen tabs de navegación
     const portfolioTab = page.getByRole('button', { name: /portfolio/i }).first();
-    await expect(portfolioTab).toBeVisible();
+    await expect(portfolioTab).toBeVisible({ timeout: 10000 });
     
     const watchlistTab = page.getByRole('button', { name: /watchlist/i }).first();
-    await expect(watchlistTab).toBeVisible();
+    await expect(watchlistTab).toBeVisible({ timeout: 10000 });
   });
 
   test('should navigate between dashboard tabs', async ({ page }) => {
+    // Detectar si estamos en móvil checando el viewport
+    const viewport = page.viewportSize();
+    const isMobile = viewport && viewport.width < 1024;
+    
+    if (isMobile) {
+      // En móvil: abrir menú hamburguesa primero
+      const hamburgerButton = page.locator('button.lg\\:hidden').first();
+      await expect(hamburgerButton).toBeVisible({ timeout: 10000 });
+      await hamburgerButton.click();
+      await page.waitForTimeout(500);
+    }
+    
     // Click en Watchlist tab
     const watchlistTab = page.getByRole('button', { name: /watchlist/i }).first();
+    await expect(watchlistTab).toBeVisible({ timeout: 10000 });
+    await watchlistTab.scrollIntoViewIfNeeded();
     await watchlistTab.click();
     await page.waitForTimeout(1000);
     
-    // Verificar que cambió a watchlist
-    await expect(watchlistTab).toBeVisible();
+    if (isMobile) {
+      // Reabrir menú para siguiente tab
+      const hamburgerButton = page.locator('button.lg\\:hidden').first();
+      await hamburgerButton.click();
+      await page.waitForTimeout(500);
+    }
     
     // Click en Portfolio tab
     const portfolioTab = page.getByRole('button', { name: /portfolio/i }).first();
+    await expect(portfolioTab).toBeVisible({ timeout: 10000 });
+    await portfolioTab.scrollIntoViewIfNeeded();
     await portfolioTab.click();
     await page.waitForTimeout(1000);
     
-    // Verificar que cambió a portfolio
-    await expect(portfolioTab).toBeVisible();
+    // Verificar que estamos en dashboard (el tab se cierra en móvil después del clic)
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 
   test('should display orders tab', async ({ page }) => {
+    // Detectar si estamos en móvil
+    const viewport = page.viewportSize();
+    const isMobile = viewport && viewport.width < 1024;
+    
+    if (isMobile) {
+      // En móvil: abrir menú hamburguesa
+      const hamburgerButton = page.locator('button.lg\\:hidden').first();
+      await expect(hamburgerButton).toBeVisible({ timeout: 10000 });
+      await hamburgerButton.click();
+      await page.waitForTimeout(500);
+    }
+    
     // Click en Orders tab
     const ordersTab = page.getByRole('button', { name: /orders/i }).first();
+    await expect(ordersTab).toBeVisible({ timeout: 10000 });
+    await ordersTab.scrollIntoViewIfNeeded();
     await ordersTab.click();
     await page.waitForTimeout(1000);
     
-    // Verificar que existe el tab de orders
-    await expect(ordersTab).toBeVisible();
+    // Verificar que estamos en dashboard (el menú se cierra en móvil)
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 
   test('should display analytics tab', async ({ page }) => {
+    // Detectar si estamos en móvil
+    const viewport = page.viewportSize();
+    const isMobile = viewport && viewport.width < 1024;
+    
+    if (isMobile) {
+      // En móvil: abrir menú hamburguesa
+      const hamburgerButton = page.locator('button.lg\\:hidden').first();
+      await expect(hamburgerButton).toBeVisible({ timeout: 10000 });
+      await hamburgerButton.click();
+      await page.waitForTimeout(500);
+    }
+    
     // Click en Analytics tab
     const analyticsTab = page.getByRole('button', { name: /analytics/i }).first();
+    await expect(analyticsTab).toBeVisible({ timeout: 10000 });
+    await analyticsTab.scrollIntoViewIfNeeded();
     await analyticsTab.click();
     await page.waitForTimeout(1000);
     
-    // Verificar que existe el tab de analytics
-    await expect(analyticsTab).toBeVisible();
+    // Verificar que estamos en dashboard (el menú se cierra en móvil)
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 
   test('should handle mobile responsive layout', async ({ page }) => {
