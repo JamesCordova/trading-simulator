@@ -52,12 +52,51 @@ jobs:
             grep "Tests:" test-results/test-output.txt | tail -1 > test-results/test-summary.txt || echo "Tests: 219 passed, 219 total" > test-results/test-summary.txt
           fi
       
-      - name: Download SonarCloud artifacts (if available)
-        uses: actions/download-artifact@v4
+      - name: Download SonarCloud artifacts from API
         continue-on-error: true
-        with:
-          name: sonarcloud-results
-          path: sonarcloud-results/
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Buscando el último run exitoso de SonarCloud..."
+          
+          SONAR_RUN=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/sonarcloud.yml/runs?status=success&per_page=1" \
+            | jq -r '.workflow_runs[0].id')
+          
+          if [ "$SONAR_RUN" = "null" ] || [ -z "$SONAR_RUN" ]; then
+            echo "⚠️ No se encontró ningún run exitoso de SonarCloud"
+            exit 0
+          fi
+          
+          echo "✅ Run encontrado: $SONAR_RUN"
+          
+          # Obtener el artifact ID
+          ARTIFACT_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$SONAR_RUN/artifacts" \
+            | jq -r '.artifacts[] | select(.name=="sonarcloud-results") | .id')
+          
+          if [ "$ARTIFACT_ID" = "null" ] || [ -z "$ARTIFACT_ID" ]; then
+            echo "⚠️ No se encontró el artifact sonarcloud-results"
+            exit 0
+          fi
+          
+          echo "✅ Artifact ID: $ARTIFACT_ID"
+          
+          # Descargar el artifact
+          mkdir -p sonarcloud-results
+          curl -L -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip" \
+            -o sonarcloud-results.zip
+          
+          # Extraer
+          if [ -f "sonarcloud-results.zip" ]; then
+            unzip -q sonarcloud-results.zip -d sonarcloud-results/
+            echo "✅ Artifact descargado y extraído"
+            ls -la sonarcloud-results/
+          else
+            echo "⚠️ No se pudo descargar el artifact"
+          fi
       
       - name: Generate dashboard
         env:
@@ -111,25 +150,17 @@ jobs:
       
       - name: Download test artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: test-reports
           path: ./reports
       
-      - name: Download Playwright merged report
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: playwright-report-merged
-          path: ./reports/playwright-report
-      
-      - name: Download Playwright artifacts from API (fallback)
-        if: failure() || cancelled()
+      - name: Download Playwright merged report from API
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Si el merged report no existe, buscar el último run exitoso de Playwright
-          echo "🔍 Buscando el último run de Playwright..."
+          echo "🔍 Buscando el último run exitoso de Playwright..."
           
           PLAYWRIGHT_RUN=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/workflows/playwright.yml/runs?status=success&per_page=1" \
@@ -150,20 +181,42 @@ jobs:
           if [ "$ARTIFACT_ID" = "null" ] || [ -z "$ARTIFACT_ID" ]; then
             echo "⚠️ No se encontró el artifact playwright-report-merged, intentando con shards..."
             
-            # Intentar descargar el primer shard como fallback
-            ARTIFACT_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/runs/$PLAYWRIGHT_RUN/artifacts" \
-              | jq -r '.artifacts[] | select(.name=="playwright-report-1") | .id')
-          fi
-          
-          if [ "$ARTIFACT_ID" = "null" ] || [ -z "$ARTIFACT_ID" ]; then
-            echo "⚠️ No se encontró ningún artifact de Playwright"
-            exit 0
+            # Intentar descargar todos los shards y combinarlos
+            mkdir -p ./reports/playwright-report
+            
+            for i in 1 2 3 4; do
+              SHARD_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+                "https://api.github.com/repos/${{ github.repository }}/actions/runs/$PLAYWRIGHT_RUN/artifacts" \
+                | jq -r ".artifacts[] | select(.name==\"playwright-report-$i\") | .id")
+              
+              if [ "$SHARD_ID" != "null" ] && [ -n "$SHARD_ID" ]; then
+                echo "✅ Descargando shard $i (ID: $SHARD_ID)..."
+                curl -L -H "Authorization: token $GITHUB_TOKEN" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$SHARD_ID/zip" \
+                  -o "playwright-shard-$i.zip"
+                
+                if [ -f "playwright-shard-$i.zip" ]; then
+                  unzip -q "playwright-shard-$i.zip" -d "./reports/playwright-report/shard-$i"
+                  echo "✅ Shard $i extraído"
+                fi
+              fi
+            done
+            
+            # Verificar si descargamos algo
+            if [ "$(ls -A ./reports/playwright-report/ 2>/dev/null)" ]; then
+              echo "✅ Shards descargados y extraídos"
+              ls -la ./reports/playwright-report/
+              exit 0
+            else
+              echo "⚠️ No se pudieron descargar los shards"
+              exit 0
+            fi
           fi
           
           echo "✅ Artifact ID: $ARTIFACT_ID"
           
-          # Descargar el artifact
+          # Descargar el artifact merged
           mkdir -p ./reports/playwright-report
           curl -L -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
@@ -178,6 +231,7 @@ jobs:
           else
             echo "⚠️ No se pudo descargar el artifact"
           fi
+      
       
       - name: Download Lighthouse artifacts from API
         continue-on-error: true
