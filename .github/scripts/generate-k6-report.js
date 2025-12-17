@@ -28,59 +28,23 @@ console.log(`📁 Input: ${jsonFile}`);
 console.log(`📄 Output: ${outputFile}`);
 
 try {
-  // Load k6-html-reporter
-  const k6HtmlReporter = require('k6-html-reporter');
+  // Load k6-html-reporter according to documentation
+  const reporter = require('k6-html-reporter');
   
-  console.log('🔧 Exploring module exports...');
-  console.log('Module type:', typeof k6HtmlReporter);
-  console.log('Module keys:', Object.keys(k6HtmlReporter));
+  console.log('🔧 Generating report using k6-html-reporter...');
   
-  console.log('🔧 Generating report...');
+  // Configure options as per documentation
+  const options = {
+    jsonFile: jsonFile,
+    output: outputFile
+  };
   
-  // Try different methods to call the reporter
-  let reportGenerated = false;
+  console.log('Options:', JSON.stringify(options, null, 2));
   
-  // Method 1: Direct function call
-  if (typeof k6HtmlReporter === 'function') {
-    console.log('Trying: k6HtmlReporter(options)');
-    k6HtmlReporter({
-      jsonFile: jsonFile,
-      output: outputFile
-    });
-    reportGenerated = true;
-  }
-  // Method 2: generateSummaryReport function
-  else if (k6HtmlReporter.generateSummaryReport) {
-    console.log('Trying: generateSummaryReport(options)');
-    k6HtmlReporter.generateSummaryReport({
-      jsonFile: jsonFile,
-      output: outputFile
-    });
-    reportGenerated = true;
-  }
-  // Method 3: Default export
-  else if (k6HtmlReporter.default) {
-    console.log('Trying: default export');
-    k6HtmlReporter.default({
-      jsonFile: jsonFile,
-      output: outputFile
-    });
-    reportGenerated = true;
-  }
-  // Method 4: generate function
-  else if (k6HtmlReporter.generate) {
-    console.log('Trying: generate(jsonFile, outputFile)');
-    k6HtmlReporter.generate(jsonFile, outputFile);
-    reportGenerated = true;
-  }
+  // Generate the report using the documented API
+  reporter.generateSummaryReport(options);
   
-  if (!reportGenerated) {
-    console.error('❌ Could not find a valid method to generate report');
-    console.error('Available methods:', Object.keys(k6HtmlReporter));
-    process.exit(1);
-  }
-  
-  // Wait a bit for file to be written
+  // Wait a bit for file to be written (reporter is synchronous but just to be safe)
   setTimeout(() => {
     // Verify output was created
     if (fs.existsSync(outputFile)) {
@@ -89,13 +53,21 @@ try {
       process.exit(0);
     } else {
       console.error('❌ Output file was not created');
+      console.error('Expected file:', outputFile);
+      console.error('Current directory:', process.cwd());
+      console.error('Files in reports/k6/:');
+      const k6Dir = path.join(process.cwd(), 'reports', 'k6');
+      if (fs.existsSync(k6Dir)) {
+        const files = fs.readdirSync(k6Dir);
+        files.forEach(file => console.error(`  - ${file}`));
+      }
       process.exit(1);
     }
-  }, 1000);
+  }, 2000);
   
 } catch (error) {
   console.error('❌ Error generating report:');
-  console.error(error.message);
-  console.error(error.stack);
+  console.error('Error message:', error.message);
+  console.error('Error stack:', error.stack);
   process.exit(1);
 }
