@@ -37,7 +37,9 @@ jobs:
         run: |
           npm init -y
           npm install k6-html-reporter
-          echo "✅ k6-html-reporter installed locally"
+          echo "✅ k6-html-reporter installed"
+          echo "📁 Checking node_modules:"
+          ls -la node_modules/.bin/ | grep k6 || echo "No k6 binary found"
 
       - name: Generate HTML Report with k6-html-reporter
         run: |
@@ -47,7 +49,15 @@ jobs:
           # Verificar que el JSON existe y tiene contenido
           if [ -f "reports/k6/results.json" ] && [ -s "reports/k6/results.json" ]; then
             echo "✅ JSON encontrado, generando HTML..."
-            npx k6-html-reporter reports/k6/results.json --output reports/k6/index.html
+            
+            # Intentar ejecutar directamente desde node_modules
+            if [ -f "node_modules/.bin/k6-html-reporter" ]; then
+              echo "🔧 Ejecutando desde node_modules/.bin/"
+              node_modules/.bin/k6-html-reporter reports/k6/results.json --output reports/k6/index.html
+            else
+              echo "🔧 Intentando con node directamente..."
+              node node_modules/k6-html-reporter/index.js reports/k6/results.json --output reports/k6/index.html
+            fi
             
             if [ -f "reports/k6/index.html" ]; then
               echo "✅ HTML generado exitosamente"
