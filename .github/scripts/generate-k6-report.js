@@ -41,29 +41,26 @@ try {
   
   console.log('Options:', JSON.stringify(options, null, 2));
   
-  // Generate the report using the documented API
+  // Generate the report using the documented API (this is synchronous)
   reporter.generateSummaryReport(options);
   
-  // Wait a bit for file to be written (reporter is synchronous but just to be safe)
-  setTimeout(() => {
-    // Verify output was created
-    if (fs.existsSync(outputFile)) {
-      const stats = fs.statSync(outputFile);
-      console.log(`✅ Report generated successfully (${(stats.size / 1024).toFixed(2)} KB)`);
-      process.exit(0);
-    } else {
-      console.error('❌ Output file was not created');
-      console.error('Expected file:', outputFile);
-      console.error('Current directory:', process.cwd());
-      console.error('Files in reports/k6/:');
-      const k6Dir = path.join(process.cwd(), 'reports', 'k6');
-      if (fs.existsSync(k6Dir)) {
-        const files = fs.readdirSync(k6Dir);
-        files.forEach(file => console.error(`  - ${file}`));
-      }
-      process.exit(1);
+  // Verify output was created immediately after generation
+  if (fs.existsSync(outputFile)) {
+    const stats = fs.statSync(outputFile);
+    console.log(`✅ Report generated successfully (${(stats.size / 1024).toFixed(2)} KB)`);
+    process.exit(0);
+  } else {
+    console.error('❌ Output file was not created');
+    console.error('Expected file:', outputFile);
+    console.error('Current directory:', process.cwd());
+    console.error('Files in reports/k6/:');
+    const k6Dir = path.join(process.cwd(), 'reports', 'k6');
+    if (fs.existsSync(k6Dir)) {
+      const files = fs.readdirSync(k6Dir);
+      files.forEach(file => console.error(`  - ${file}`));
     }
-  }, 2000);
+    process.exit(1);
+  }
   
 } catch (error) {
   console.error('❌ Error generating report:');
