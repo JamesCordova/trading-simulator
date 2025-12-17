@@ -27,44 +27,40 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y k6
 
+      - name: Install k6-html-reporter
+        run: |
+          npm install -g k6-html-reporter
+          echo "✅ k6-html-reporter installed"
+          k6-html-reporter --version || echo "⚠️ Version check failed but continuing..."
+
       - name: Run K6 Performance Tests
         run: |
           mkdir -p reports/k6
           k6 run --out json=reports/k6/results.json k6/performance-test.js | tee reports/k6/console-output.txt
         continue-on-error: true
 
-      - name: Generate HTML Report
+      - name: Generate HTML Report with k6-html-reporter
         run: |
           echo "📊 Generando reporte HTML desde JSON..."
           ls -lh reports/k6/
           
           # Verificar que el JSON existe y tiene contenido
-          if [ ! -f "reports/k6/results.json" ] || [ ! -s "reports/k6/results.json" ]; then
+          if [ -f "reports/k6/results.json" ] && [ -s "reports/k6/results.json" ]; then
+            echo "✅ JSON encontrado, generando HTML..."
+            k6-html-reporter reports/k6/results.json --output reports/k6/index.html
+            
+            if [ -f "reports/k6/index.html" ]; then
+              echo "✅ HTML generado exitosamente"
+              ls -lh reports/k6/index.html
+            else
+              echo "❌ Falló la generación del HTML"
+              exit 1
+            fi
+          else
             echo "❌ JSON no encontrado o vacío"
             exit 1
           fi
-          
-          echo "✅ JSON encontrado"
-          
-          # Método 1: Intentar k6-html-reporter con npx
-          echo "🔧 Intentando npx k6-html-reporter..."
-          if npx --yes k6-html-reporter reports/k6/results.json --output reports/k6/index.html 2>/dev/null; then
-            echo "✅ HTML generado con k6-html-reporter"
-          else
-            echo "⚠️ k6-html-reporter falló, usando script Python..."
-            # Método 2: Usar script Python
-            python3 .github/scripts/generate-k6-report.py reports/k6/results.json reports/k6/index.html
-          fi
-          
-          # Verificar resultado
-          if [ -f "reports/k6/index.html" ]; then
-            echo "✅ HTML generado exitosamente"
-            ls -lh reports/k6/index.html
-          else
-            echo "❌ Falló la generación del HTML"
-            exit 1
-          fi
-        continue-on-error: false
+        continue-on-error: true
 
       - name: Generate Fallback HTML Report
         if: failure() || !hashFiles('reports/k6/index.html')
