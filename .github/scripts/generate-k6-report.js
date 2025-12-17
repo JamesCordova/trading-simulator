@@ -10,10 +10,10 @@ const path = require('path');
 
 // Get command line arguments
 const jsonFile = process.argv[2];
-const outputFile = process.argv[3];
+const outputPath = process.argv[3]; // Can be directory or file path
 
-if (!jsonFile || !outputFile) {
-  console.error('❌ Usage: node generate-k6-report.js <input.json> <output.html>');
+if (!jsonFile || !outputPath) {
+  console.error('❌ Usage: node generate-k6-report.js <input.json> <output-dir-or-file>');
   process.exit(1);
 }
 
@@ -23,9 +23,15 @@ if (!fs.existsSync(jsonFile)) {
   process.exit(1);
 }
 
+// k6-html-reporter expects output to be a DIRECTORY, not a file path
+// If user provided a file path, extract the directory
+const outputDir = outputPath.endsWith('.html') ? path.dirname(outputPath) : outputPath;
+const expectedFile = path.join(outputDir, 'index.html');
+
 console.log('📊 K6 HTML Report Generator');
 console.log(`📁 Input: ${jsonFile}`);
-console.log(`📄 Output: ${outputFile}`);
+console.log(`� Output Directory: ${outputDir}`);
+console.log(`📄 Expected File: ${expectedFile}`);
 
 try {
   // Load k6-html-reporter according to documentation
@@ -34,9 +40,10 @@ try {
   console.log('🔧 Generating report using k6-html-reporter...');
   
   // Configure options as per documentation
+  // Important: output must be a directory path, not file path
   const options = {
     jsonFile: jsonFile,
-    output: outputFile
+    output: outputDir
   };
   
   console.log('Options:', JSON.stringify(options, null, 2));
@@ -45,19 +52,25 @@ try {
   reporter.generateSummaryReport(options);
   
   // Verify output was created immediately after generation
-  if (fs.existsSync(outputFile)) {
-    const stats = fs.statSync(outputFile);
-    console.log(`✅ Report generated successfully (${(stats.size / 1024).toFixed(2)} KB)`);
+  // k6-html-reporter creates index.html in the output directory
+  if (fs.existsSync(expectedFile)) {
+    const stats = fs.statSync(expectedFile);
+    console.log(`✅ Report generated successfully at: ${expectedFile}`);
+    console.log(`📊 File size: ${(stats.size / 1024).toFixed(2)} KB`);
     process.exit(0);
   } else {
     console.error('❌ Output file was not created');
-    console.error('Expected file:', outputFile);
+    console.error('Expected file:', expectedFile);
+    console.error('Output directory:', outputDir);
     console.error('Current directory:', process.cwd());
-    console.error('Files in reports/k6/:');
-    const k6Dir = path.join(process.cwd(), 'reports', 'k6');
-    if (fs.existsSync(k6Dir)) {
-      const files = fs.readdirSync(k6Dir);
-      files.forEach(file => console.error(`  - ${file}`));
+    console.error('Files in output directory:');
+    if (fs.existsSync(outputDir)) {
+      const files = fs.readdirSync(outputDir);
+      files.forEach(file => {
+        const filePath = path.join(outputDir, file);
+        const stat = fs.statSync(filePath);
+        console.error(`  ${stat.isDirectory() ? '📂 DIR' : '📄 FILE'} ${file}`);
+      });
     }
     process.exit(1);
   }
