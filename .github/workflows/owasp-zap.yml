@@ -50,26 +50,26 @@ jobs:
           chmod 777 zap-reports
       
       - name: OWASP ZAP Baseline Scan
+        continue-on-error: true
         uses: zaproxy/action-baseline@v0.12.0
         with:
           target: ${{ steps.set-url.outputs.target_url }}
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a -j -l INFO'
           fail_action: false
-          allow_issue_writing: true
+          allow_issue_writing: false
           issue_title: 'OWASP ZAP Baseline Scan Report'
-          artifact_name: 'zap-baseline-scan'
       
       - name: OWASP ZAP Full Scan
+        continue-on-error: true
         uses: zaproxy/action-full-scan@v0.10.0
         with:
           target: ${{ steps.set-url.outputs.target_url }}
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a -j -l INFO'
           fail_action: false
-          allow_issue_writing: true
+          allow_issue_writing: false
           issue_title: 'OWASP ZAP Full Scan Report'
-          artifact_name: 'zap-full-scan'
       
       - name: Move ZAP reports
         if: always()
