@@ -38,8 +38,12 @@ jobs:
           npm init -y
           npm install k6-html-reporter
           echo "✅ k6-html-reporter installed"
-          echo "📁 Checking node_modules:"
-          ls -la node_modules/.bin/ | grep k6 || echo "No k6 binary found"
+          echo "📁 Exploring package structure:"
+          ls -la node_modules/.bin/ 2>/dev/null || echo "No .bin directory"
+          echo "📂 k6-html-reporter directory:"
+          ls -la node_modules/k6-html-reporter/ 2>/dev/null || echo "Package not found"
+          echo "📄 Checking for CLI files:"
+          find node_modules/k6-html-reporter -name "*.js" -type f | head -5
 
       - name: Generate HTML Report with k6-html-reporter
         run: |
@@ -50,13 +54,24 @@ jobs:
           if [ -f "reports/k6/results.json" ] && [ -s "reports/k6/results.json" ]; then
             echo "✅ JSON encontrado, generando HTML..."
             
-            # Intentar ejecutar directamente desde node_modules
+            # Buscar el archivo CLI correcto
             if [ -f "node_modules/.bin/k6-html-reporter" ]; then
-              echo "🔧 Ejecutando desde node_modules/.bin/"
+              echo "🔧 Método 1: Ejecutando desde .bin/"
               node_modules/.bin/k6-html-reporter reports/k6/results.json --output reports/k6/index.html
+            elif [ -f "node_modules/k6-html-reporter/dist/index.js" ]; then
+              echo "🔧 Método 2: Ejecutando desde dist/"
+              node node_modules/k6-html-reporter/dist/index.js reports/k6/results.json --output reports/k6/index.html
+            elif [ -f "node_modules/k6-html-reporter/src/index.js" ]; then
+              echo "🔧 Método 3: Ejecutando desde src/"
+              node node_modules/k6-html-reporter/src/index.js reports/k6/results.json --output reports/k6/index.html
+            elif [ -f "node_modules/k6-html-reporter/bin/k6-html-reporter" ]; then
+              echo "🔧 Método 4: Ejecutando desde bin/"
+              node node_modules/k6-html-reporter/bin/k6-html-reporter reports/k6/results.json --output reports/k6/index.html
             else
-              echo "🔧 Intentando con node directamente..."
-              node node_modules/k6-html-reporter/index.js reports/k6/results.json --output reports/k6/index.html
+              echo "❌ No se encontró el ejecutable de k6-html-reporter"
+              echo "📁 Contenido del paquete:"
+              ls -R node_modules/k6-html-reporter/ | head -20
+              exit 1
             fi
             
             if [ -f "reports/k6/index.html" ]; then
