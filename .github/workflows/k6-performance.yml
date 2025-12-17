@@ -33,56 +33,30 @@ jobs:
           k6 run --out json=reports/k6/results.json k6/performance-test.js | tee reports/k6/console-output.txt
         continue-on-error: true
 
-      - name: Install k6-html-reporter locally
+      - name: Install k6-html-reporter
         run: |
           npm init -y
           npm install k6-html-reporter
           echo "✅ k6-html-reporter installed"
-          echo "📁 Exploring package structure:"
-          ls -la node_modules/.bin/ 2>/dev/null || echo "No .bin directory"
-          echo "📂 k6-html-reporter directory:"
-          ls -la node_modules/k6-html-reporter/ 2>/dev/null || echo "Package not found"
-          echo "📄 Checking for CLI files:"
-          find node_modules/k6-html-reporter -name "*.js" -type f | head -5
 
       - name: Generate HTML Report with k6-html-reporter
         run: |
           echo "📊 Generando reporte HTML desde JSON..."
-          ls -lh reports/k6/
           
-          # Verificar que el JSON existe y tiene contenido
-          if [ -f "reports/k6/results.json" ] && [ -s "reports/k6/results.json" ]; then
-            echo "✅ JSON encontrado, generando HTML..."
-            
-            # Buscar el archivo CLI correcto
-            if [ -f "node_modules/.bin/k6-html-reporter" ]; then
-              echo "🔧 Método 1: Ejecutando desde .bin/"
-              node_modules/.bin/k6-html-reporter reports/k6/results.json --output reports/k6/index.html
-            elif [ -f "node_modules/k6-html-reporter/dist/index.js" ]; then
-              echo "🔧 Método 2: Ejecutando desde dist/"
-              node node_modules/k6-html-reporter/dist/index.js reports/k6/results.json --output reports/k6/index.html
-            elif [ -f "node_modules/k6-html-reporter/src/index.js" ]; then
-              echo "🔧 Método 3: Ejecutando desde src/"
-              node node_modules/k6-html-reporter/src/index.js reports/k6/results.json --output reports/k6/index.html
-            elif [ -f "node_modules/k6-html-reporter/bin/k6-html-reporter" ]; then
-              echo "🔧 Método 4: Ejecutando desde bin/"
-              node node_modules/k6-html-reporter/bin/k6-html-reporter reports/k6/results.json --output reports/k6/index.html
-            else
-              echo "❌ No se encontró el ejecutable de k6-html-reporter"
-              echo "📁 Contenido del paquete:"
-              ls -R node_modules/k6-html-reporter/ | head -20
-              exit 1
-            fi
-            
-            if [ -f "reports/k6/index.html" ]; then
-              echo "✅ HTML generado exitosamente"
-              ls -lh reports/k6/index.html
-            else
-              echo "❌ Falló la generación del HTML"
-              exit 1
-            fi
+          if [ ! -f "reports/k6/results.json" ]; then
+            echo "❌ JSON no encontrado"
+            exit 1
+          fi
+          
+          echo "✅ JSON encontrado ($(ls -lh reports/k6/results.json | awk '{print $5}'))"
+          echo "🔧 Usando script de Node.js para generar reporte..."
+          
+          node .github/scripts/generate-k6-report.js reports/k6/results.json reports/k6/index.html
+          
+          if [ -f "reports/k6/index.html" ]; then
+            echo "✅ HTML generado exitosamente ($(ls -lh reports/k6/index.html | awk '{print $5}'))"
           else
-            echo "❌ JSON no encontrado o vacío"
+            echo "❌ Falló la generación del HTML"
             exit 1
           fi
         continue-on-error: true
