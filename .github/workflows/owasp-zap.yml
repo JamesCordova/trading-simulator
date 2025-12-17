@@ -49,41 +49,46 @@ jobs:
           mkdir -p zap-reports
           chmod 777 zap-reports
       
-      - name: OWASP ZAP Baseline Scan
-        continue-on-error: true
-        uses: zaproxy/action-baseline@v0.12.0
-        with:
-          target: ${{ steps.set-url.outputs.target_url }}
-          rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a -j -l INFO'
-          fail_action: false
-          allow_issue_writing: false
-          issue_title: 'OWASP ZAP Baseline Scan Report'
+      - name: Pull ZAP Docker Image
+        run: docker pull ghcr.io/zaproxy/zaproxy:stable
       
-      - name: OWASP ZAP Full Scan
+      - name: Run OWASP ZAP Baseline Scan
         continue-on-error: true
-        uses: zaproxy/action-full-scan@v0.10.0
-        with:
-          target: ${{ steps.set-url.outputs.target_url }}
-          rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a -j -l INFO'
-          fail_action: false
-          allow_issue_writing: false
-          issue_title: 'OWASP ZAP Full Scan Report'
+        run: |
+          docker run -v ${{ github.workspace }}:/zap/wrk/:rw \
+            -t ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t ${{ steps.set-url.outputs.target_url }} \
+            -r zap-reports/zap-baseline-report.html \
+            -w zap-reports/zap-baseline-report.md \
+            -J zap-reports/zap-baseline-report.json \
+            -a -j -l INFO || true
+          
+          echo "✅ Baseline scan completed"
       
-      - name: Move ZAP reports
+      - name: Run OWASP ZAP Full Scan
+        continue-on-error: true
+        run: |
+          docker run -v ${{ github.workspace }}:/zap/wrk/:rw \
+            -t ghcr.io/zaproxy/zaproxy:stable \
+            zap-full-scan.py \
+            -t ${{ steps.set-url.outputs.target_url }} \
+            -r zap-reports/zap-full-report.html \
+            -w zap-reports/zap-full-report.md \
+            -J zap-reports/zap-full-report.json \
+            -a -j -l INFO || true
+          
+          echo "✅ Full scan completed"
+      
+      - name: List ZAP reports
         if: always()
         run: |
-          # Los reportes se generan automáticamente con nombres por defecto
-          mv report_html.html zap-reports/zap-baseline-report.html 2>/dev/null || true
-          mv report_md.md zap-reports/zap-baseline-report.md 2>/dev/null || true
-          mv report_json.json zap-reports/zap-baseline-report.json 2>/dev/null || true
+          echo "📁 Reportes generados en zap-reports:"
+          ls -lah zap-reports/ || echo "No reports directory"
           
-          # Buscar otros reportes que pudieran haberse generado
-          find . -maxdepth 1 -name "*.html" -o -name "*.md" -o -name "*.json" | grep -i zap | xargs -I {} mv {} zap-reports/ 2>/dev/null || true
-          
-          echo "📁 Reportes en zap-reports:"
-          ls -la zap-reports/
+          echo ""
+          echo "📄 Contenido del workspace:"
+          ls -lah . | grep -E '\.(html|md|json)$' || echo "No report files in root"
       
       - name: Generate ZAP Summary
         if: always()
