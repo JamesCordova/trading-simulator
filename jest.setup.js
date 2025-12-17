@@ -1,13 +1,8 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom'
 
-// Mock Firebase
-jest.mock('./src/app/components/firebase.js', () => ({
-  db: {},
-  auth: {
-    currentUser: null,
-  },
-}))
+// Note: Firebase SDK modules are mocked in individual test files when needed
+// We don't mock the entire firebase.js module to allow testing the actual configuration
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({

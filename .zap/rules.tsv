@@ -1,0 +1,89 @@
+# ZAP Scanning Rules Configuration
+# Format: ID	THRESHOLD	[INSTANCE_IDS]
+# ID = Rule ID (use ALL for all rules)
+# THRESHOLD = OFF, DEFAULT, LOW, MEDIUM, HIGH
+# INSTANCE_IDS = Comma-separated list of instance IDs to ignore (optional)
+
+# Enable all rules by default
+ALL	DEFAULT
+
+# Adjust specific rules based on your application needs
+# Example: Reduce false positives for development
+
+# Content Security Policy (CSP) - Set to INFO for development
+10038	LOW
+
+# X-Frame-Options Header Not Set - Warn but don't fail
+10020	LOW
+
+# X-Content-Type-Options Header Missing
+10021	LOW
+
+# Server Leaks Information via "X-Powered-By" HTTP Response Header Field(s)
+10037	LOW
+
+# Cookie No HttpOnly Flag
+10010	MEDIUM
+
+# Cookie Without Secure Flag
+10011	MEDIUM
+
+# Cross-Domain JavaScript Source File Inclusion
+10017	MEDIUM
+
+# Missing Anti-CSRF Tokens
+10202	HIGH
+
+# SQL Injection
+40018	HIGH
+
+# Cross Site Scripting (Reflected)
+40012	HIGH
+
+# Cross Site Scripting (Persistent)
+40014	HIGH
+
+# External Redirect
+20019	HIGH
+
+# Path Traversal
+6	HIGH
+
+# Remote File Inclusion
+7	HIGH
+
+# Command Injection
+90020	HIGH
+
+# CRLF Injection
+40003	HIGH
+
+# XXE - External Entity
+90023	HIGH
+
+# Insecure Authentication
+10101	HIGH
+
+# Session ID in URL Rewrite
+3	MEDIUM
+
+# Timestamp Disclosure
+10096	LOW
+
+# Hash Disclosure
+10097	LOW
+
+# Username Hash Found
+10107	LOW
+
+# Modern Web Application (ignore certain checks for SPAs)
+10049	LOW
+
+# Application Error Disclosure
+90022	MEDIUM
+
+# Private IP Disclosure
+2	LOW
+
+# Secure Pages Include Mixed Content
+10040	MEDIUM

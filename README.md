@@ -17,6 +17,7 @@ The Trading Simulator App is a web-based platform built with Next.js that allows
 - **Test Coverage**: [View Coverage Report](https://yemmy03.github.io/trading-sim-app/coverage/)
 - **CI/CD Dashboard**: [View Dashboard](https://yemmy03.github.io/trading-sim-app/dashboard/)
 - **SonarCloud Analysis**: [View Quality Metrics](https://sonarcloud.io/project/overview?id=selected-projects-org_trading-sim-app)
+- **OWASP ZAP Security**: [View Security Reports](https://yemmy03.github.io/trading-sim-app/zap/)
 - **GitHub Actions**: [View Workflows](https://github.com/Yemmy03/trading-sim-app/actions)
 
 # Features
@@ -95,3 +96,26 @@ Building the Next.js application
 Running automated tests
 ```
 The above ensures that the code is always verified before being deployed to production or containerized environments.
+
+# Security Testing
+
+## 🛡️ OWASP ZAP DAST
+
+The project includes automated security testing using OWASP ZAP (Zed Attack Proxy) for Dynamic Application Security Testing (DAST):
+
+- **Baseline Scan**: Passive security scan that runs after each deployment
+- **Full Scan**: Comprehensive active security testing
+- **Weekly Scans**: Automated security audits every Monday
+- **Manual Scans**: On-demand security testing via GitHub Actions
+
+### View Security Reports
+- [Security Dashboard](https://yemmy03.github.io/trading-sim-app/zap/)
+- [OWASP ZAP Documentation](./OWASP_ZAP.md)
+
+### Security Features Tested
+- SQL Injection vulnerabilities
+- Cross-Site Scripting (XSS)
+- Security headers configuration
+- CSRF protection
+- Cookie security
+- And more...

@@ -1,0 +1,181 @@
+name: OWASP ZAP DAST Security Scan
+
+on:
+  workflow_run:
+    workflows: ["Deploy to Vercel"]
+    types:
+      - completed
+    branches: [ main ]
+  schedule:
+    # Run weekly on Mondays at 2 AM UTC
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Target URL to scan (leave empty to use production URL)'
+        required: false
+        type: string
+
+jobs:
+  zap-scan:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
+    
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set target URL
+        id: set-url
+        run: |
+          if [ -n "${{ github.event.inputs.target_url }}" ]; then
+            TARGET_URL="${{ github.event.inputs.target_url }}"
+          elif [ -n "${{ secrets.PRODUCTION_URL }}" ]; then
+            TARGET_URL="${{ secrets.PRODUCTION_URL }}"
+          else
+            # Fallback to a default URL if no secret is set
+            TARGET_URL="https://trading-sim-app.vercel.app"
+          fi
+          echo "target_url=$TARGET_URL" >> $GITHUB_OUTPUT
+          echo "🎯 Target URL: $TARGET_URL"
+      
+      - name: Create reports directory
+        run: mkdir -p zap-reports
+      
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: ${{ steps.set-url.outputs.target_url }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j -l INFO -r zap-baseline-report.html -w zap-baseline-report.md -J zap-baseline-report.json'
+          fail_action: false
+          allow_issue_writing: true
+          issue_title: 'OWASP ZAP Baseline Scan Report'
+      
+      - name: OWASP ZAP Full Scan
+        uses: zaproxy/action-full-scan@v0.10.0
+        with:
+          target: ${{ steps.set-url.outputs.target_url }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j -l INFO -r zap-full-report.html -w zap-full-report.md -J zap-full-report.json'
+          fail_action: false
+          allow_issue_writing: true
+          issue_title: 'OWASP ZAP Full Scan Report'
+      
+      - name: Move ZAP reports
+        if: always()
+        run: |
+          mv zap-baseline-report.* zap-reports/ 2>/dev/null || true
+          mv zap-full-report.* zap-reports/ 2>/dev/null || true
+          ls -la zap-reports/
+      
+      - name: Generate ZAP Summary
+        if: always()
+        run: |
+          cat > zap-reports/summary.md << 'EOF'
+          # 🛡️ OWASP ZAP Security Scan Summary
+          
+          **Scan Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Target URL:** ${{ steps.set-url.outputs.target_url }}
+          **Workflow Run:** ${{ github.run_number }}
+          
+          ## 📊 Scan Types
+          
+          ### Baseline Scan
+          - Quick passive scan
+          - Identifies obvious vulnerabilities
+          - Safe for production environments
+          
+          ### Full Scan
+          - Active security testing
+          - More comprehensive vulnerability detection
+          - May generate traffic on target site
+          
+          ## 📁 Reports Generated
+          
+          - `zap-baseline-report.html` - Baseline scan HTML report
+          - `zap-baseline-report.md` - Baseline scan Markdown report
+          - `zap-baseline-report.json` - Baseline scan JSON report
+          - `zap-full-report.html` - Full scan HTML report
+          - `zap-full-report.md` - Full scan Markdown report
+          - `zap-full-report.json` - Full scan JSON report
+          
+          ## 🔍 How to Review
+          
+          1. Download the artifacts from this workflow run
+          2. Open the HTML reports in your browser
+          3. Review security findings by severity
+          4. Check the MD reports for quick overview
+          5. Use JSON reports for automated processing
+          
+          ## 🎯 Next Steps
+          
+          - Review all HIGH and MEDIUM severity findings
+          - Create issues for vulnerabilities that need fixing
+          - Update security headers and configurations
+          - Re-run scans after fixes
+          
+          EOF
+      
+      - name: Upload ZAP Baseline Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: zap-reports/zap-baseline-report.*
+          retention-days: 30
+      
+      - name: Upload ZAP Full Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-full-report
+          path: zap-reports/zap-full-report.*
+          retention-days: 30
+      
+      - name: Upload ZAP Summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-summary
+          path: zap-reports/summary.md
+          retention-days: 30
+      
+      - name: Comment on PR with scan results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## 🛡️ OWASP ZAP Security Scan Results\n\n';
+            comment += '**Target URL:** ${{ steps.set-url.outputs.target_url }}\n\n';
+            
+            // Try to read baseline report
+            try {
+              const baselineReport = fs.readFileSync('zap-reports/zap-baseline-report.md', 'utf8');
+              comment += '### Baseline Scan\n' + baselineReport.substring(0, 5000) + '\n\n';
+            } catch (e) {
+              comment += '### Baseline Scan\n*Report not available*\n\n';
+            }
+            
+            comment += '📊 **Full reports available in workflow artifacts**\n';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      - name: Display scan completion
+        if: always()
+        run: |
+          echo "✅ OWASP ZAP Security Scan Complete!"
+          echo "🎯 Target: ${{ steps.set-url.outputs.target_url }}"
+          echo "📊 Reports uploaded as artifacts"
+          echo "🔍 Review the artifacts to see detailed security findings"
