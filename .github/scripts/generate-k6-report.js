@@ -2,7 +2,7 @@
 
 /**
  * K6 HTML Report Generator
- * Generates HTML report from K6 JSON output using k6-html-reporter
+ * Generates HTML report from K6 JSON output using k6-reporter
  */
 
 const fs = require('fs');
@@ -23,65 +23,42 @@ if (!fs.existsSync(jsonFile)) {
   process.exit(1);
 }
 
-// k6-html-reporter expects output to be a DIRECTORY, not a file path
-// If user provided a file path, extract the directory
-const outputDir = outputPath.endsWith('.html') ? path.dirname(outputPath) : outputPath;
-// k6-html-reporter creates report.html (not index.html!) in the output directory
-const reportFile = path.join(outputDir, 'report.html');
-const expectedFile = outputPath.endsWith('.html') ? outputPath : path.join(outputDir, 'index.html');
+// Determine output file path
+const outputFile = outputPath.endsWith('.html') ? outputPath : path.join(outputPath, 'index.html');
+const outputDir = path.dirname(outputFile);
+
+// Ensure output directory exists
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true });
+}
 
 console.log('📊 K6 HTML Report Generator');
 console.log(`📁 Input: ${jsonFile}`);
-console.log(`📂 Output Directory: ${outputDir}`);
-console.log(`📄 k6-html-reporter creates: ${reportFile}`);
-console.log(`📄 We will rename to: ${expectedFile}`);
+console.log(`� Output: ${outputFile}`);
 
 try {
-  // Load k6-html-reporter according to documentation
-  const reporter = require('k6-html-reporter');
+  // Load k6-reporter - more modern and maintained than k6-html-reporter
+  const reporter = require('k6-reporter');
   
-  console.log('🔧 Generating report using k6-html-reporter...');
+  console.log('🔧 Generating report using k6-reporter...');
   
-  // Configure options as per documentation
-  // Important: output must be a directory path, not file path
-  const options = {
-    jsonFile: jsonFile,
-    output: outputDir
-  };
+  // Read the JSON summary file
+  const summaryData = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
   
-  console.log('Options:', JSON.stringify(options, null, 2));
+  // Generate HTML report using k6-reporter
+  const htmlReport = reporter.generateHtmlReport(summaryData);
   
-  // Generate the report using the documented API (this is synchronous)
-  reporter.generateSummaryReport(options);
+  // Write the HTML report to file
+  fs.writeFileSync(outputFile, htmlReport);
   
-  // k6-html-reporter creates report.html, but we want index.html
-  if (fs.existsSync(reportFile)) {
-    console.log(`✅ k6-html-reporter created: ${reportFile}`);
-    
-    // Rename report.html to index.html (or user-specified name)
-    if (reportFile !== expectedFile) {
-      console.log(`🔄 Renaming to: ${expectedFile}`);
-      fs.renameSync(reportFile, expectedFile);
-    }
-    
-    const stats = fs.statSync(expectedFile);
-    console.log(`✅ Report ready at: ${expectedFile}`);
+  // Verify output was created
+  if (fs.existsSync(outputFile)) {
+    const stats = fs.statSync(outputFile);
+    console.log(`✅ Report generated successfully at: ${outputFile}`);
     console.log(`📊 File size: ${(stats.size / 1024).toFixed(2)} KB`);
     process.exit(0);
   } else {
-    console.error('❌ k6-html-reporter did not create report.html');
-    console.error('Expected file:', reportFile);
-    console.error('Output directory:', outputDir);
-    console.error('Current directory:', process.cwd());
-    console.error('Files in output directory:');
-    if (fs.existsSync(outputDir)) {
-      const files = fs.readdirSync(outputDir);
-      files.forEach(file => {
-        const filePath = path.join(outputDir, file);
-        const stat = fs.statSync(filePath);
-        console.error(`  ${stat.isDirectory() ? '📂 DIR' : '📄 FILE'} ${file}`);
-      });
-    }
+    console.error('❌ Failed to create report file');
     process.exit(1);
   }
   
