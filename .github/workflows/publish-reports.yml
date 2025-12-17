@@ -604,14 +604,10 @@ jobs:
               fi
               echo "✅ Reportes de ZAP copiados"
               
-              # Copiar template de índice para ZAP (verificar si existe)
-              if [ -f ".github/scripts/zap-index-template.html" ]; then
-                cp .github/scripts/zap-index-template.html public/zap/index.html
-                echo "✅ Índice de ZAP creado desde template"
-              else
-                echo "⚠️ Template no encontrado, creando índice básico"
-                echo '<html><head><title>ZAP Reports</title></head><body><h1>OWASP ZAP Reports</h1><ul><li><a href="zap-baseline-report.html">Baseline Report</a></li><li><a href="zap-full-report.html">Full Report</a></li><li><a href="summary.md">Summary</a></li></ul></body></html>' > public/zap/index.html
-              fi
+              # Generar índice estilizado usando script
+              echo "🎨 Generando índice estilizado para ZAP..."
+              chmod +x .github/scripts/generate-zap-index.sh
+              .github/scripts/generate-zap-index.sh public/zap/index.html
               
               # SKIP OLD HEREDOC
               : << 'ZAPEOF'
