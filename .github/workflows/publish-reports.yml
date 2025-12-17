@@ -589,12 +589,27 @@ jobs:
             echo "✅ Directorio zap-reports encontrado"
             mkdir -p public/zap
             
+            # Debug: ver estructura
+            echo "📁 Estructura de reports/zap-reports:"
+            find reports/zap-reports -type f
+            
             if [ "$(ls -A reports/zap-reports/)" ]; then
-              cp -r reports/zap-reports/* public/zap/
+              # Si hay una subcarpeta zap-reports dentro, copiar su contenido
+              if [ -d "reports/zap-reports/zap-reports" ]; then
+                echo "✅ Copiando desde subcarpeta zap-reports/zap-reports"
+                cp -r reports/zap-reports/zap-reports/* public/zap/
+              else
+                echo "✅ Copiando desde zap-reports directamente"
+                cp -r reports/zap-reports/* public/zap/
+              fi
               echo "✅ Reportes de ZAP copiados"
               
-              # Crear página de índice para ZAP
-              cat > public/zap/index.html << 'ZAPEOF'
+              # Copiar template de índice para ZAP
+              cp .github/scripts/zap-index-template.html public/zap/index.html
+              echo "✅ Índice de ZAP creado"
+              
+              # SKIP OLD HEREDOC
+              : << 'ZAPEOF'
           <!DOCTYPE html>
           <html lang="en">
           <head>
