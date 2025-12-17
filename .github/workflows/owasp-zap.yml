@@ -38,21 +38,23 @@ jobs:
           elif [ -n "${{ secrets.PRODUCTION_URL }}" ]; then
             TARGET_URL="${{ secrets.PRODUCTION_URL }}"
           else
-            # Fallback to a default URL if no secret is set
-            TARGET_URL="https://trading-sim-app.vercel.app"
+            # Fallback to the correct production URL
+            TARGET_URL="https://trading-simulator-beryl.vercel.app"
           fi
           echo "target_url=$TARGET_URL" >> $GITHUB_OUTPUT
           echo "🎯 Target URL: $TARGET_URL"
       
       - name: Create reports directory
-        run: mkdir -p zap-reports
+        run: |
+          mkdir -p zap-reports
+          chmod 777 zap-reports
       
       - name: OWASP ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.12.0
         with:
           target: ${{ steps.set-url.outputs.target_url }}
           rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a -j -l INFO -r zap-baseline-report.html -w zap-baseline-report.md -J zap-baseline-report.json'
+          cmd_options: '-a -j -l INFO'
           fail_action: false
           allow_issue_writing: true
           issue_title: 'OWASP ZAP Baseline Scan Report'
@@ -62,7 +64,7 @@ jobs:
         with:
           target: ${{ steps.set-url.outputs.target_url }}
           rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a -j -l INFO -r zap-full-report.html -w zap-full-report.md -J zap-full-report.json'
+          cmd_options: '-a -j -l INFO'
           fail_action: false
           allow_issue_writing: true
           issue_title: 'OWASP ZAP Full Scan Report'
@@ -70,8 +72,15 @@ jobs:
       - name: Move ZAP reports
         if: always()
         run: |
-          mv zap-baseline-report.* zap-reports/ 2>/dev/null || true
-          mv zap-full-report.* zap-reports/ 2>/dev/null || true
+          # Los reportes se generan automáticamente con nombres por defecto
+          mv report_html.html zap-reports/zap-baseline-report.html 2>/dev/null || true
+          mv report_md.md zap-reports/zap-baseline-report.md 2>/dev/null || true
+          mv report_json.json zap-reports/zap-baseline-report.json 2>/dev/null || true
+          
+          # Buscar otros reportes que pudieran haberse generado
+          find . -maxdepth 1 -name "*.html" -o -name "*.md" -o -name "*.json" | grep -i zap | xargs -I {} mv {} zap-reports/ 2>/dev/null || true
+          
+          echo "📁 Reportes en zap-reports:"
           ls -la zap-reports/
       
       - name: Generate ZAP Summary
