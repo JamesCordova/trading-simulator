@@ -3,9 +3,13 @@ name: Publish Test Reports to GitHub Pages
 on:
   # Se ejecuta manualmente
   workflow_dispatch:
-  # Se ejecuta después de que Playwright termine (solo uno para evitar duplicados)
+  # Se ejecuta después de que TODOS los workflows de testing terminen
   workflow_run:
-    workflows: ["Playwright E2E Tests"]
+    workflows: 
+      - "Playwright E2E Tests"
+      - "Lighthouse CI"
+      - "OWASP ZAP Security Scan"
+      - "K6 Performance Tests"
     types:
       - completed
     branches: [ main ]

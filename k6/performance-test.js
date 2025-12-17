@@ -89,21 +89,5 @@ export default function () {
   sleep(1);
 }
 
-export function handleSummary(data) {
-  return {
-    'stdout': textSummary(data, { indent: ' ', enableColors: true }),
-  };
-}
-
-function textSummary(data, options) {
-  const indent = options.indent || '';
-  const enableColors = options.enableColors || false;
-  
-  return `
-${indent}Execution Summary:
-${indent}  scenarios: ${data.root_group.checks.passes + data.root_group.checks.fails} checks
-${indent}  http_reqs: ${data.metrics.http_reqs.values.count}
-${indent}  http_req_duration: avg=${data.metrics.http_req_duration.values.avg.toFixed(2)}ms
-${indent}  checks: ${data.root_group.checks.passes} passed, ${data.root_group.checks.fails} failed
-  `;
-}
+// handleSummary is called at the end of the test to generate custom reports
+// k6-html-reporter will use the JSON output to generate the HTML report
