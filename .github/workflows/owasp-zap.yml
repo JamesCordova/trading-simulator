@@ -58,6 +58,7 @@ jobs:
           fail_action: false
           allow_issue_writing: true
           issue_title: 'OWASP ZAP Baseline Scan Report'
+          artifact_name: 'zap-baseline-scan'
       
       - name: OWASP ZAP Full Scan
         uses: zaproxy/action-full-scan@v0.10.0
@@ -68,6 +69,7 @@ jobs:
           fail_action: false
           allow_issue_writing: true
           issue_title: 'OWASP ZAP Full Scan Report'
+          artifact_name: 'zap-full-scan'
       
       - name: Move ZAP reports
         if: always()

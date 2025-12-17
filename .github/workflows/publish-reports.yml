@@ -3,12 +3,15 @@ name: Publish Test Reports to GitHub Pages
 on:
   # Se ejecuta manualmente
   workflow_dispatch:
-  # Se ejecuta después de que Playwright termine
+  # Se ejecuta después de que Playwright termine (solo uno para evitar duplicados)
   workflow_run:
-    workflows: ["Playwright E2E Tests", "Lighthouse Performance Audit", "OWASP ZAP DAST Security Scan"]
+    workflows: ["Playwright E2E Tests"]
     types:
       - completed
     branches: [ main ]
+  # También se puede ejecutar en un schedule
+  schedule:
+    - cron: '0 */6 * * *'  # Cada 6 horas
 
 # Permisos necesarios para GitHub Pages
 permissions:
@@ -19,7 +22,7 @@ permissions:
 # Solo permite un despliegue concurrente
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
