@@ -14,6 +14,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install K6
         run: |
           sudo gpg -k
@@ -22,10 +27,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y k6
 
-      - name: Install k6-to-junit
+      - name: Install k6-html-reporter
         run: |
-          npm install -g k6-to-junit
           npm install -g k6-html-reporter
+          echo "✅ k6-html-reporter installed"
+          k6-html-reporter --version || echo "⚠️ Version check failed but continuing..."
 
       - name: Run K6 Performance Tests
         run: |
@@ -35,11 +41,29 @@ jobs:
 
       - name: Generate HTML Report with k6-html-reporter
         run: |
-          k6-html-reporter --output reports/k6/index.html --json-file reports/k6/results.json
+          echo "📊 Generando reporte HTML desde JSON..."
+          ls -lh reports/k6/
+          
+          # Verificar que el JSON existe y tiene contenido
+          if [ -f "reports/k6/results.json" ] && [ -s "reports/k6/results.json" ]; then
+            echo "✅ JSON encontrado, generando HTML..."
+            k6-html-reporter reports/k6/results.json --output reports/k6/index.html
+            
+            if [ -f "reports/k6/index.html" ]; then
+              echo "✅ HTML generado exitosamente"
+              ls -lh reports/k6/index.html
+            else
+              echo "❌ Falló la generación del HTML"
+              exit 1
+            fi
+          else
+            echo "❌ JSON no encontrado o vacío"
+            exit 1
+          fi
         continue-on-error: true
 
       - name: Generate Fallback HTML Report
-        if: failure()
+        if: failure() || !hashFiles('reports/k6/index.html')
         run: |
           cat > reports/k6/index.html << 'EOF'
           <!DOCTYPE html>
