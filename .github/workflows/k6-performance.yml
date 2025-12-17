@@ -53,11 +53,17 @@ jobs:
           echo "🔧 Usando script de Node.js para generar reporte..."
           
           node .github/scripts/generate-k6-report.js reports/k6/results.json reports/k6/index.html
+          NODE_EXIT_CODE=$?
           
-          if [ -f "reports/k6/index.html" ]; then
+          echo "📁 Debug - Archivos en reports/k6/ después de generación:"
+          ls -lh reports/k6/
+          
+          if [ $NODE_EXIT_CODE -eq 0 ] && [ -f "reports/k6/index.html" ]; then
             echo "✅ HTML generado exitosamente ($(ls -lh reports/k6/index.html | awk '{print $5}'))"
           else
             echo "❌ Falló la generación del HTML"
+            echo "Node exit code: $NODE_EXIT_CODE"
+            echo "File exists: $([ -f "reports/k6/index.html" ] && echo 'yes' || echo 'no')"
             exit 1
           fi
         continue-on-error: true
