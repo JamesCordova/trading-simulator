@@ -29,18 +29,56 @@ console.log(`📄 Output: ${outputFile}`);
 
 try {
   // Load k6-html-reporter
-  const htmlReporter = require('k6-html-reporter');
+  const k6HtmlReporter = require('k6-html-reporter');
+  
+  console.log('🔧 Exploring module exports...');
+  console.log('Module type:', typeof k6HtmlReporter);
+  console.log('Module keys:', Object.keys(k6HtmlReporter));
   
   console.log('🔧 Generating report...');
   
-  // The module expects options object with jsonFile and output properties
-  const options = {
-    jsonFile: jsonFile,
-    output: outputFile
-  };
+  // Try different methods to call the reporter
+  let reportGenerated = false;
   
-  // Generate the report using the correct API
-  htmlReporter(options);
+  // Method 1: Direct function call
+  if (typeof k6HtmlReporter === 'function') {
+    console.log('Trying: k6HtmlReporter(options)');
+    k6HtmlReporter({
+      jsonFile: jsonFile,
+      output: outputFile
+    });
+    reportGenerated = true;
+  }
+  // Method 2: generateSummaryReport function
+  else if (k6HtmlReporter.generateSummaryReport) {
+    console.log('Trying: generateSummaryReport(options)');
+    k6HtmlReporter.generateSummaryReport({
+      jsonFile: jsonFile,
+      output: outputFile
+    });
+    reportGenerated = true;
+  }
+  // Method 3: Default export
+  else if (k6HtmlReporter.default) {
+    console.log('Trying: default export');
+    k6HtmlReporter.default({
+      jsonFile: jsonFile,
+      output: outputFile
+    });
+    reportGenerated = true;
+  }
+  // Method 4: generate function
+  else if (k6HtmlReporter.generate) {
+    console.log('Trying: generate(jsonFile, outputFile)');
+    k6HtmlReporter.generate(jsonFile, outputFile);
+    reportGenerated = true;
+  }
+  
+  if (!reportGenerated) {
+    console.error('❌ Could not find a valid method to generate report');
+    console.error('Available methods:', Object.keys(k6HtmlReporter));
+    process.exit(1);
+  }
   
   // Wait a bit for file to be written
   setTimeout(() => {
