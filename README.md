@@ -14,11 +14,12 @@ The Trading Simulator App is a web-based platform built with Next.js that allows
 
 ## 📊 Quality Reports
 
-- **Test Coverage**: [View Coverage Report](https://yemmy03.github.io/trading-sim-app/coverage/)
-- **CI/CD Dashboard**: [View Dashboard](https://yemmy03.github.io/trading-sim-app/dashboard/)
+- **Test Coverage**: [View Coverage Report](https://jamescordova.github.io/trading-simulator/coverage/)
+- **CI/CD Dashboard**: [View Dashboard](https://jamescordova.github.io/trading-simulator/dashboard/)
 - **SonarCloud Analysis**: [View Quality Metrics](https://sonarcloud.io/project/overview?id=selected-projects-org_trading-sim-app)
-- **OWASP ZAP Security**: [View Security Reports](https://yemmy03.github.io/trading-sim-app/zap/)
-- **GitHub Actions**: [View Workflows](https://github.com/Yemmy03/trading-sim-app/actions)
+- **OWASP ZAP Security**: [View Security Reports](https://jamescordova.github.io/trading-simulator/zap/)
+- **K6 Performance**: [View Performance Reports](https://jamescordova.github.io/trading-simulator/k6/)
+- **GitHub Actions**: [View Workflows](https://github.com/JamesCordova/trading-simulator/actions)
 
 # Features
 ```
@@ -119,3 +120,23 @@ The project includes automated security testing using OWASP ZAP (Zed Attack Prox
 - CSRF protection
 - Cookie security
 - And more...
+
+## 🚀 K6 Performance Testing
+
+The project includes automated performance testing using K6 for load and stress testing:
+
+- **Load Testing**: Simulates 20-50 concurrent users
+- **Stress Testing**: Tests application under peak load conditions
+- **Response Time Monitoring**: Validates p95 < 2s
+- **Error Rate Tracking**: Ensures < 10% error rate
+
+### View Performance Reports
+- [Performance Dashboard](https://jamescordova.github.io/trading-simulator/k6/)
+- [K6 Documentation](./K6_PERFORMANCE.md)
+
+### Performance Metrics
+- Landing page load time
+- Dashboard response time
+- Static asset loading
+- Multi-page navigation performance
+- Concurrent user handling

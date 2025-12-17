@@ -344,6 +344,46 @@ jobs:
           echo "📁 Archivos ZAP descargados:"
           ls -la ./reports/zap-reports/ 2>/dev/null || echo "No se descargaron reportes"
       
+      - name: Download K6 Performance artifacts from API
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Buscando el último run de K6 Performance..."
+          
+          K6_RUN=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/k6-performance.yml/runs?status=success&per_page=1" \
+            | jq -r '.workflow_runs[0].id')
+          
+          if [ "$K6_RUN" = "null" ] || [ -z "$K6_RUN" ]; then
+            echo "⚠️ No se encontró ningún run exitoso de K6"
+            exit 0
+          fi
+          
+          echo "✅ Run encontrado: $K6_RUN"
+          
+          # Descargar K6 Reports
+          ARTIFACT_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$K6_RUN/artifacts" \
+            | jq -r '.artifacts[] | select(.name=="k6-reports") | .id')
+          
+          if [ "$ARTIFACT_ID" != "null" ] && [ -n "$ARTIFACT_ID" ]; then
+            echo "✅ Descargando K6 Reports (ID: $ARTIFACT_ID)..."
+            mkdir -p ./reports/k6
+            curl -L -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip" \
+              -o k6-reports.zip
+            
+            if [ -f "k6-reports.zip" ]; then
+              unzip -q k6-reports.zip -d ./reports/k6/
+              echo "✅ K6 reports extraídos"
+            fi
+          fi
+          
+          echo "📁 Archivos K6 descargados:"
+          ls -la ./reports/k6/ 2>/dev/null || echo "No se descargaron reportes"
+      
       - name: Create Pages structure
         run: |
           mkdir -p public
@@ -502,6 +542,12 @@ jobs:
                               <div class="link-icon">🛡️</div>
                               <div class="link-title">OWASP ZAP DAST</div>
                               <div class="link-desc">Security scan reports</div>
+                          </a>
+                          
+                          <a href="k6/" class="link-card" style="background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);">
+                              <div class="link-icon">🚀</div>
+                              <div class="link-title">K6 Performance</div>
+                              <div class="link-desc">Load & stress testing</div>
                           </a>
                       </div>
                       
@@ -726,6 +772,27 @@ jobs:
             echo "⚠️ No se encontró reports/zap-reports"
             mkdir -p public/zap
             echo "<h1>OWASP ZAP reports not available yet</h1><p>Security scans will run after deployment.</p>" > public/zap/index.html
+          fi
+          
+          # Copiar reportes de K6
+          echo "🚀 Procesando reportes de K6..."
+          if [ -d "reports/k6" ]; then
+            echo "✅ Directorio k6 encontrado"
+            mkdir -p public/k6
+            
+            if [ "$(ls -A reports/k6/)" ]; then
+              cp -r reports/k6/* public/k6/
+              echo "✅ Reportes de K6 copiados"
+              ls -la public/k6/
+            else
+              echo "⚠️ k6 reports está vacío"
+              mkdir -p public/k6
+              echo "<h1>K6 Performance reports not available yet</h1><p>Performance tests will run on the next push.</p>" > public/k6/index.html
+            fi
+          else
+            echo "⚠️ No se encontró reports/k6"
+            mkdir -p public/k6
+            echo "<h1>K6 Performance reports not available yet</h1><p>Performance tests will run on the next push.</p>" > public/k6/index.html
           fi
           
           # Crear página de badges de SonarCloud

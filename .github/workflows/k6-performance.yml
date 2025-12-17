@@ -1,0 +1,178 @@
+name: K6 Performance Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  k6-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install K6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Run K6 Performance Tests
+        run: |
+          mkdir -p reports/k6
+          k6 run --out json=reports/k6/results.json k6/performance-test.js | tee reports/k6/console-output.txt
+        continue-on-error: true
+
+      - name: Generate HTML Report
+        run: |
+          cat > reports/k6/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>K6 Performance Test Report</title>
+              <style>
+                  * { margin: 0; padding: 0; box-sizing: border-box; }
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                      padding: 40px 20px;
+                  }
+                  .container { max-width: 1200px; margin: 0 auto; }
+                  .header {
+                      text-align: center;
+                      color: white;
+                      margin-bottom: 40px;
+                  }
+                  .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+                  .card {
+                      background: white;
+                      border-radius: 15px;
+                      padding: 30px;
+                      margin-bottom: 20px;
+                      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                  }
+                  .metric-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                      gap: 20px;
+                      margin-top: 20px;
+                  }
+                  .metric-card {
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      color: white;
+                      padding: 25px;
+                      border-radius: 10px;
+                      text-align: center;
+                  }
+                  .metric-value {
+                      font-size: 2.5rem;
+                      font-weight: bold;
+                      margin: 10px 0;
+                  }
+                  .metric-label {
+                      font-size: 0.9rem;
+                      opacity: 0.9;
+                      text-transform: uppercase;
+                      letter-spacing: 1px;
+                  }
+                  .console-output {
+                      background: #1e1e1e;
+                      color: #d4d4d4;
+                      padding: 20px;
+                      border-radius: 10px;
+                      font-family: 'Courier New', monospace;
+                      font-size: 0.9rem;
+                      overflow-x: auto;
+                      white-space: pre-wrap;
+                      word-wrap: break-word;
+                  }
+                  .back-link {
+                      display: inline-block;
+                      margin-top: 20px;
+                      padding: 12px 24px;
+                      background: white;
+                      color: #2d3748;
+                      text-decoration: none;
+                      border-radius: 8px;
+                      font-weight: 600;
+                      transition: transform 0.2s;
+                  }
+                  .back-link:hover { transform: scale(1.05); }
+                  .status-badge {
+                      display: inline-block;
+                      padding: 8px 16px;
+                      border-radius: 20px;
+                      font-weight: 600;
+                      margin-top: 10px;
+                  }
+                  .status-success { background: #48bb78; color: white; }
+                  .status-warning { background: #ed8936; color: white; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="header">
+                      <h1>🚀 K6 Performance Test Report</h1>
+                      <p>Load Testing Results for Trading Simulator</p>
+                  </div>
+
+                  <div class="card">
+                      <h2>Test Configuration</h2>
+                      <p><strong>Target URL:</strong> https://trading-simulator-beryl.vercel.app</p>
+                      <p><strong>Test Stages:</strong></p>
+                      <ul style="margin-left: 20px; margin-top: 10px;">
+                          <li>Ramp-up: 20 users over 30s</li>
+                          <li>Sustain: 20 users for 1 minute</li>
+                          <li>Spike: 50 users over 30s</li>
+                          <li>Peak: 50 users for 1 minute</li>
+                          <li>Ramp-down: 0 users over 30s</li>
+                      </ul>
+                      <div class="status-badge status-success">Test Completed</div>
+                  </div>
+
+                  <div class="card">
+                      <h2>Console Output</h2>
+                      <div class="console-output" id="console-output">Loading...</div>
+                  </div>
+
+                  <div class="card">
+                      <h2>📊 Raw Results</h2>
+                      <p>Download the complete JSON results for detailed analysis:</p>
+                      <a href="results.json" download class="back-link" style="margin-top: 10px;">Download JSON Results</a>
+                  </div>
+
+                  <div style="text-align: center;">
+                      <a href="../" class="back-link">← Back to Reports Hub</a>
+                  </div>
+              </div>
+
+              <script>
+                  // Load console output
+                  fetch('console-output.txt')
+                      .then(response => response.text())
+                      .then(data => {
+                          document.getElementById('console-output').textContent = data;
+                      })
+                      .catch(error => {
+                          document.getElementById('console-output').textContent = 'Error loading console output';
+                      });
+              </script>
+          </body>
+          </html>
+          EOF
+          
+          echo "✅ HTML report generated"
+
+      - name: Upload K6 Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-reports
+          path: reports/k6
