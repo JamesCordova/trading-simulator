@@ -68,6 +68,19 @@ try {
     return `${(value * 100).toFixed(2)}%`;
   };
   
+  // Helper function to format thresholds
+  const formatThresholds = (thresholds) => {
+    if (!thresholds || typeof thresholds !== 'object') return 'N/A';
+    
+    const formatted = Object.entries(thresholds).map(([condition, passed]) => {
+      const icon = passed ? '✅' : '❌';
+      const status = passed ? 'Pass' : 'Fail';
+      return `${icon} ${condition} (${status})`;
+    }).join('<br>');
+    
+    return formatted || 'N/A';
+  };
+  
   // Generate timing rows
   const timingRows = [
     ['http_req_duration', 'Total Duration'],
@@ -269,13 +282,13 @@ try {
                     <tr>
                         <td><strong>HTTP Request Failed</strong></td>
                         <td><span class="status-badge ${(metrics.http_req_failed?.value || 0) < 0.1 ? 'status-success' : 'status-warning'}">${formatPercent(metrics.http_req_failed?.value)}</span></td>
-                        <td>Threshold: ${metrics.http_req_failed?.thresholds ? JSON.stringify(metrics.http_req_failed.thresholds) : 'N/A'}</td>
+                        <td>${formatThresholds(metrics.http_req_failed?.thresholds)}</td>
                     </tr>
                     ${metrics.http_req_duration?.thresholds ? `
                     <tr>
                         <td><strong>Request Duration</strong></td>
                         <td><span class="status-badge status-success">p(95): ${formatDuration(metrics.http_req_duration?.['p(95)'])}</span></td>
-                        <td>Threshold: ${JSON.stringify(metrics.http_req_duration.thresholds)}</td>
+                        <td>${formatThresholds(metrics.http_req_duration.thresholds)}</td>
                     </tr>` : ''}
                 </tbody>
             </table>
