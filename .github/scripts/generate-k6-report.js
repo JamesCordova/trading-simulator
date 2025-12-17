@@ -29,22 +29,31 @@ console.log(`📄 Output: ${outputFile}`);
 
 try {
   // Load k6-html-reporter
-  const reporter = require('k6-html-reporter');
+  const htmlReporter = require('k6-html-reporter');
   
   console.log('🔧 Generating report...');
   
-  // Generate the report
-  reporter.generateSummaryReport(jsonFile, outputFile);
+  // The module expects options object with jsonFile and output properties
+  const options = {
+    jsonFile: jsonFile,
+    output: outputFile
+  };
   
-  // Verify output was created
-  if (fs.existsSync(outputFile)) {
-    const stats = fs.statSync(outputFile);
-    console.log(`✅ Report generated successfully (${(stats.size / 1024).toFixed(2)} KB)`);
-    process.exit(0);
-  } else {
-    console.error('❌ Output file was not created');
-    process.exit(1);
-  }
+  // Generate the report using the correct API
+  htmlReporter(options);
+  
+  // Wait a bit for file to be written
+  setTimeout(() => {
+    // Verify output was created
+    if (fs.existsSync(outputFile)) {
+      const stats = fs.statSync(outputFile);
+      console.log(`✅ Report generated successfully (${(stats.size / 1024).toFixed(2)} KB)`);
+      process.exit(0);
+    } else {
+      console.error('❌ Output file was not created');
+      process.exit(1);
+    }
+  }, 1000);
   
 } catch (error) {
   console.error('❌ Error generating report:');
