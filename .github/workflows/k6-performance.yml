@@ -30,7 +30,8 @@ jobs:
       - name: Run K6 Performance Tests
         run: |
           mkdir -p reports/k6
-          k6 run --out json=reports/k6/results.json k6/performance-test.js | tee reports/k6/console-output.txt
+          # Use --summary-export to generate a proper JSON summary for k6-html-reporter
+          k6 run --summary-export=reports/k6/results.json k6/performance-test.js | tee reports/k6/console-output.txt
         continue-on-error: true
 
       - name: Install k6-html-reporter

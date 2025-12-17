@@ -89,5 +89,26 @@ export default function () {
   sleep(1);
 }
 
-// handleSummary is called at the end of the test to generate custom reports
-// k6-html-reporter will use the JSON output to generate the HTML report
+// handleSummary is called at the end of the test to generate a summary JSON
+// This is required for k6-html-reporter to work correctly
+export function handleSummary(data) {
+  return {
+    'stdout': textSummary(data, { indent: ' ', enableColors: true }),
+  };
+}
+
+function textSummary(data, options) {
+  const indent = options.indent || '';
+  
+  return `
+${indent}✅ K6 Test Summary
+${indent}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${indent}Duration: ${data.state.testRunDurationMs}ms
+${indent}Iterations: ${data.metrics.iterations.values.count}
+${indent}VUs: ${data.metrics.vus.values.value}
+${indent}HTTP Requests: ${data.metrics.http_reqs.values.count}
+${indent}Failed Requests: ${data.metrics.http_req_failed.values.passes || 0}
+${indent}Avg Response Time: ${data.metrics.http_req_duration.values.avg.toFixed(2)}ms
+${indent}p95 Response Time: ${data.metrics.http_req_duration.values['p(95)'].toFixed(2)}ms
+  `;
+}
