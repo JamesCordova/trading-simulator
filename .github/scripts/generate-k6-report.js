@@ -26,12 +26,15 @@ if (!fs.existsSync(jsonFile)) {
 // k6-html-reporter expects output to be a DIRECTORY, not a file path
 // If user provided a file path, extract the directory
 const outputDir = outputPath.endsWith('.html') ? path.dirname(outputPath) : outputPath;
-const expectedFile = path.join(outputDir, 'index.html');
+// k6-html-reporter creates report.html (not index.html!) in the output directory
+const reportFile = path.join(outputDir, 'report.html');
+const expectedFile = outputPath.endsWith('.html') ? outputPath : path.join(outputDir, 'index.html');
 
 console.log('📊 K6 HTML Report Generator');
 console.log(`📁 Input: ${jsonFile}`);
-console.log(`� Output Directory: ${outputDir}`);
-console.log(`📄 Expected File: ${expectedFile}`);
+console.log(`📂 Output Directory: ${outputDir}`);
+console.log(`📄 k6-html-reporter creates: ${reportFile}`);
+console.log(`📄 We will rename to: ${expectedFile}`);
 
 try {
   // Load k6-html-reporter according to documentation
@@ -51,16 +54,23 @@ try {
   // Generate the report using the documented API (this is synchronous)
   reporter.generateSummaryReport(options);
   
-  // Verify output was created immediately after generation
-  // k6-html-reporter creates index.html in the output directory
-  if (fs.existsSync(expectedFile)) {
+  // k6-html-reporter creates report.html, but we want index.html
+  if (fs.existsSync(reportFile)) {
+    console.log(`✅ k6-html-reporter created: ${reportFile}`);
+    
+    // Rename report.html to index.html (or user-specified name)
+    if (reportFile !== expectedFile) {
+      console.log(`🔄 Renaming to: ${expectedFile}`);
+      fs.renameSync(reportFile, expectedFile);
+    }
+    
     const stats = fs.statSync(expectedFile);
-    console.log(`✅ Report generated successfully at: ${expectedFile}`);
+    console.log(`✅ Report ready at: ${expectedFile}`);
     console.log(`📊 File size: ${(stats.size / 1024).toFixed(2)} KB`);
     process.exit(0);
   } else {
-    console.error('❌ Output file was not created');
-    console.error('Expected file:', expectedFile);
+    console.error('❌ k6-html-reporter did not create report.html');
+    console.error('Expected file:', reportFile);
     console.error('Output directory:', outputDir);
     console.error('Current directory:', process.cwd());
     console.error('Files in output directory:');
