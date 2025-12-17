@@ -311,59 +311,27 @@ jobs:
           
           echo "✅ Run encontrado: $ZAP_RUN"
           
-          # Descargar ZAP Baseline Report
-          BASELINE_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          # Descargar ZAP Reports
+          ARTIFACT_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs/$ZAP_RUN/artifacts" \
-            | jq -r '.artifacts[] | select(.name=="zap-baseline-report") | .id')
+            | jq -r '.artifacts[] | select(.name=="owasp-zap-reports") | .id')
           
-          if [ "$BASELINE_ID" != "null" ] && [ -n "$BASELINE_ID" ]; then
-            echo "✅ Descargando ZAP Baseline Report (ID: $BASELINE_ID)..."
+          if [ "$ARTIFACT_ID" != "null" ] && [ -n "$ARTIFACT_ID" ]; then
+            echo "✅ Descargando OWASP ZAP Reports (ID: $ARTIFACT_ID)..."
             mkdir -p ./reports/zap-reports
             curl -L -H "Authorization: token $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$BASELINE_ID/zip" \
-              -o zap-baseline.zip
+              "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip" \
+              -o owasp-zap-reports.zip
             
-            if [ -f "zap-baseline.zip" ]; then
-              unzip -q zap-baseline.zip -d ./reports/zap-reports/baseline
-              echo "✅ Baseline report extraído"
-            fi
-          fi
-          
-          # Descargar ZAP Full Report
-          FULL_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$ZAP_RUN/artifacts" \
-            | jq -r '.artifacts[] | select(.name=="zap-full-report") | .id')
-          
-          if [ "$FULL_ID" != "null" ] && [ -n "$FULL_ID" ]; then
-            echo "✅ Descargando ZAP Full Report (ID: $FULL_ID)..."
-            mkdir -p ./reports/zap-reports
-            curl -L -H "Authorization: token $GITHUB_TOKEN" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$FULL_ID/zip" \
-              -o zap-full.zip
-            
-            if [ -f "zap-full.zip" ]; then
-              unzip -q zap-full.zip -d ./reports/zap-reports/full
-              echo "✅ Full report extraído"
-            fi
-          fi
-          
-          # Descargar ZAP Summary
-          SUMMARY_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$ZAP_RUN/artifacts" \
-            | jq -r '.artifacts[] | select(.name=="zap-summary") | .id')
-          
-          if [ "$SUMMARY_ID" != "null" ] && [ -n "$SUMMARY_ID" ]; then
-            echo "✅ Descargando ZAP Summary (ID: $SUMMARY_ID)..."
-            curl -L -H "Authorization: token $GITHUB_TOKEN" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$SUMMARY_ID/zip" \
-              -o zap-summary.zip
-            
-            if [ -f "zap-summary.zip" ]; then
-              unzip -q zap-summary.zip -d ./reports/zap-reports/
-              echo "✅ Summary extraído"
+            if [ -f "owasp-zap-reports.zip" ]; then
+              unzip -q owasp-zap-reports.zip -d ./reports/zap-reports/
+              echo "✅ ZAP reports extraídos"
+              
+              # Renombrar reportes si es necesario
+              [ -f "./reports/zap-reports/report_html.html" ] && mv ./reports/zap-reports/report_html.html ./reports/zap-reports/zap-baseline-report.html
+              [ -f "./reports/zap-reports/report_md.md" ] && mv ./reports/zap-reports/report_md.md ./reports/zap-reports/zap-baseline-report.md
+              [ -f "./reports/zap-reports/report_json.json" ] && mv ./reports/zap-reports/report_json.json ./reports/zap-reports/zap-baseline-report.json
             fi
           fi
           
@@ -698,20 +666,20 @@ jobs:
                   <div class="card">
                       <h2>📊 Available Reports</h2>
                       <div class="report-grid">
-                          <a href="baseline/zap-baseline-report.html" class="report-item">
+                          <a href="zap-baseline-report.html" class="report-item">
                               <div class="report-icon">⚡</div>
                               <div class="report-title">Baseline Scan</div>
                               <div class="report-desc">Quick passive security scan</div>
                           </a>
                           
-                          <a href="full/zap-full-report.html" class="report-item">
-                              <div class="report-icon">🔍</div>
-                              <div class="report-title">Full Scan</div>
-                              <div class="report-desc">Comprehensive active testing</div>
+                          <a href="zap-baseline-report.md" class="report-item">
+                              <div class="report-icon">�</div>
+                              <div class="report-title">Markdown Report</div>
+                              <div class="report-desc">Text-based scan results</div>
                           </a>
                           
                           <a href="summary.md" class="report-item">
-                              <div class="report-icon">📝</div>
+                              <div class="report-icon">�</div>
                               <div class="report-title">Summary</div>
                               <div class="report-desc">Scan overview and findings</div>
                           </a>
