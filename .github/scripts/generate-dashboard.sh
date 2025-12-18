@@ -51,8 +51,8 @@ BUILD_DATE=$(date '+%Y-%m-%d %H:%M:%S')
 COMMIT_SHA=${GITHUB_SHA:0:7}
 BRANCH=${GITHUB_REF_NAME:-main}
 
-# Generar HTML del dashboard
-cat > dashboard/index.html << 'EOF'
+# Generar HTML del dashboard usando variables directamente (sin sed)
+cat > dashboard/index.html << EOF
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -240,6 +240,24 @@ cat > dashboard/index.html << 'EOF'
             color: #7c2d12;
         }
 
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .back-button:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
         footer {
             text-align: center;
             color: white;
@@ -251,23 +269,30 @@ cat > dashboard/index.html << 'EOF'
 <body>
     <div class="container">
         <header>
-            <h1>🚀 CI/CD Dashboard</h1>
-            <p class="subtitle">Trading Simulator App - Build & Test Reports</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h1>🚀 CI/CD Dashboard</h1>
+                    <p class="subtitle">Trading Simulator App - Build & Test Reports</p>
+                </div>
+                <a href="../index.html" class="back-button" title="Back to Reports Hub">
+                    ← Reports Hub
+                </a>
+            </div>
         </header>
 
         <div class="metrics-grid">
             <div class="metric-card">
                 <div class="metric-icon">✅</div>
-                <div class="metric-value" id="test-results">TEST_RESULTS</div>
+                <div class="metric-value" id="test-results">${TEST_RESULTS}</div>
                 <div class="metric-label">Tests Passed</div>
             </div>
 
             <div class="metric-card">
                 <div class="metric-icon">📊</div>
-                <div class="metric-value" id="coverage-value">COVERAGE_PCT%</div>
+                <div class="metric-value" id="coverage-value">${COVERAGE_PCT}%</div>
                 <div class="metric-label">Code Coverage</div>
                 <div class="coverage-bar">
-                    <div class="coverage-fill" style="width: COVERAGE_PCT%"></div>
+                    <div class="coverage-fill" style="width: ${COVERAGE_PCT}%"></div>
                 </div>
             </div>
 
@@ -281,7 +306,7 @@ cat > dashboard/index.html << 'EOF'
 
             <div class="metric-card">
                 <div class="metric-icon">📅</div>
-                <div class="metric-value" style="font-size: 1.2rem;">BUILD_DATE</div>
+                <div class="metric-value" style="font-size: 1.2rem;">${BUILD_DATE}</div>
                 <div class="metric-label">Last Build</div>
             </div>
         </div>
@@ -291,17 +316,29 @@ cat > dashboard/index.html << 'EOF'
             <div class="report-links">
                 <a href="../coverage/lcov-report/index.html" class="report-link">
                     <span class="report-icon">📊</span>
-                    Coverage Report
+                    Jest Coverage Report
                 </a>
-                <a href="../coverage/lcov-report/index.html" class="report-link">
+                <a href="../k6/index.html" class="report-link">
+                    <span class="report-icon">⚡</span>
+                    K6 Performance
+                </a>
+                <a href="../zap/index.html" class="report-link">
+                    <span class="report-icon">🛡️</span>
+                    OWASP ZAP Security
+                </a>
+                <a href="../playwright/index.html" class="report-link">
+                    <span class="report-icon">🎭</span>
+                    Playwright E2E
+                </a>
+                <a href="https://sonarcloud.io/project/overview?id=selected-projects-org_trading-sim-app" class="report-link" target="_blank">
                     <span class="report-icon">📈</span>
-                    Detailed Coverage
+                    SonarCloud Analysis
                 </a>
-                <a href="https://github.com/JamesCordova/trading-simulator" class="report-link">
+                <a href="https://github.com/JamesCordova/trading-simulator" class="report-link" target="_blank">
                     <span class="report-icon">💻</span>
                     Source Code
                 </a>
-                <a href="https://github.com/JamesCordova/trading-simulator/actions" class="report-link">
+                <a href="https://github.com/JamesCordova/trading-simulator/actions" class="report-link" target="_blank">
                     <span class="report-icon">⚙️</span>
                     GitHub Actions
                 </a>
@@ -310,11 +347,11 @@ cat > dashboard/index.html << 'EOF'
             <div class="build-info">
                 <div class="build-info-item">
                     <span class="build-label">Branch:</span>
-                    <span class="build-value">BRANCH_NAME</span>
+                    <span class="build-value">${BRANCH}</span>
                 </div>
                 <div class="build-info-item">
                     <span class="build-label">Commit:</span>
-                    <span class="build-value">COMMIT_SHA</span>
+                    <span class="build-value">${COMMIT_SHA}</span>
                 </div>
                 <div class="build-info-item">
                     <span class="build-label">Node Version:</span>
@@ -322,7 +359,7 @@ cat > dashboard/index.html << 'EOF'
                 </div>
                 <div class="build-info-item">
                     <span class="build-label">Build Time:</span>
-                    <span class="build-value">BUILD_DATE</span>
+                    <span class="build-value">${BUILD_DATE}</span>
                 </div>
             </div>
         </div>
@@ -336,11 +373,9 @@ cat > dashboard/index.html << 'EOF'
 </html>
 EOF
 
-# Reemplazar placeholders con valores reales
-sed -i "s/COVERAGE_PCT/${COVERAGE_PCT}/g" dashboard/index.html
-sed -i "s/TEST_RESULTS/${TEST_RESULTS}/g" dashboard/index.html
-sed -i "s/BUILD_DATE/${BUILD_DATE}/g" dashboard/index.html
-sed -i "s/COMMIT_SHA/${COMMIT_SHA}/g" dashboard/index.html
-sed -i "s/BRANCH_NAME/${BRANCH}/g" dashboard/index.html
-
 echo "✅ Dashboard generado en dashboard/index.html"
+echo "📊 Métricas:"
+echo "   - Tests: ${TEST_RESULTS}"
+echo "   - Coverage: ${COVERAGE_PCT}%"
+echo "   - Branch: ${BRANCH}"
+echo "   - Commit: ${COMMIT_SHA}"
