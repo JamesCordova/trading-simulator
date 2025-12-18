@@ -1,0 +1,245 @@
+{
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "Landing Page": {
+                "name": "Landing Page",
+                "path": "::Landing Page",
+                "id": "7a5938e2cf23029bdb78615599e0d52a",
+                "groups": {},
+                "checks": {
+                        "Landing page - status is 200": {
+                            "fails": 4,
+                            "name": "Landing page - status is 200",
+                            "path": "::Landing Page::Landing page - status is 200",
+                            "id": "c0528b8dbb12f6a1084bd93b793fbf2a",
+                            "passes": 1380
+                        },
+                        "Landing page - loads in < 2s": {
+                            "name": "Landing page - loads in < 2s",
+                            "path": "::Landing Page::Landing page - loads in < 2s",
+                            "id": "fac2ed43e8505e0dfbb6321a8771768e",
+                            "passes": 1384,
+                            "fails": 0
+                        },
+                        "Landing page - has content": {
+                            "passes": 1380,
+                            "fails": 4,
+                            "name": "Landing page - has content",
+                            "path": "::Landing Page::Landing page - has content",
+                            "id": "9ca8ee769e53ead848325f0719b83c26"
+                        }
+                    }
+            },
+            "Dashboard Page": {
+                "id": "cc369984e686d62abcee0e7ff29215f7",
+                "groups": {},
+                "checks": {
+                        "Dashboard - status is 200 or 307 (redirect)": {
+                            "path": "::Dashboard Page::Dashboard - status is 200 or 307 (redirect)",
+                            "id": "fd34718d4225972cebecbdff9f79abbb",
+                            "passes": 1379,
+                            "fails": 1,
+                            "name": "Dashboard - status is 200 or 307 (redirect)"
+                        },
+                        "Dashboard - loads in < 3s": {
+                            "name": "Dashboard - loads in < 3s",
+                            "path": "::Dashboard Page::Dashboard - loads in < 3s",
+                            "id": "6af9d2f495a39729bd99a2bf52e18a23",
+                            "passes": 1380,
+                            "fails": 0
+                        },
+                        "Dashboard - response exists": {
+                            "name": "Dashboard - response exists",
+                            "path": "::Dashboard Page::Dashboard - response exists",
+                            "id": "70dca5123c62fede6196ca62835f9c86",
+                            "passes": 1379,
+                            "fails": 1
+                        }
+                    },
+                "name": "Dashboard Page",
+                "path": "::Dashboard Page"
+            },
+            "Static Assets": {
+                "checks": {
+                    "Static asset loaded": {
+                        "name": "Static asset loaded",
+                        "path": "::Static Assets::Static asset loaded",
+                        "id": "5255f0fef983967cd29109fdf43b2040",
+                        "passes": 1376,
+                        "fails": 1382
+                    }
+                },
+                "name": "Static Assets",
+                "path": "::Static Assets",
+                "id": "b6262206bbbc8623d7be393034ea6de0",
+                "groups": {}
+            },
+            "Multiple Page Navigation": {
+                "id": "5c0cd533951f5fe9ab926e19e541a255",
+                "groups": {},
+                "checks": {
+                        "/ - loaded successfully": {
+                            "name": "/ - loaded successfully",
+                            "path": "::Multiple Page Navigation::/ - loaded successfully",
+                            "id": "c21c13629b9c3c6388c6a3a72edcb108",
+                            "passes": 1378,
+                            "fails": 1
+                        },
+                        "/dashboard - loaded successfully": {
+                            "path": "::Multiple Page Navigation::/dashboard - loaded successfully",
+                            "id": "6618ddee29dbaa4ed53a78250305385e",
+                            "passes": 1378,
+                            "fails": 1,
+                            "name": "/dashboard - loaded successfully"
+                        }
+                    },
+                "name": "Multiple Page Navigation",
+                "path": "::Multiple Page Navigation"
+            }
+        },
+        "checks": {}
+    },
+    "metrics": {
+        "http_req_connecting": {
+            "p(95)": 0,
+            "avg": 0.0531673858695652,
+            "min": 0,
+            "med": 0,
+            "max": 16.866225,
+            "p(90)": 0
+        },
+        "vus": {
+            "value": 2,
+            "min": 1,
+            "max": 50
+        },
+        "http_req_duration": {
+            "min": 6.198772,
+            "med": 13.436577,
+            "max": 1830.934934,
+            "p(90)": 25.527344400000004,
+            "p(95)": 46.158220399999934,
+            "avg": 26.29028994685996,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_reqs": {
+            "count": 8280,
+            "rate": 38.918363225790685
+        },
+        "http_req_duration{expected_response:true}": {
+            "min": 7.364088,
+            "med": 13.893363,
+            "max": 1830.934934,
+            "p(90)": 27.61313,
+            "p(95)": 54.288928,
+            "avg": 28.771083025105288
+        },
+        "http_req_blocked": {
+            "avg": 0.12766420193236794,
+            "min": 0.0001,
+            "med": 0.000291,
+            "max": 51.952762,
+            "p(90)": 0.000441,
+            "p(95)": 0.000521
+        },
+        "page_load_time": {
+            "avg": 28.775337168176893,
+            "min": 7.364088,
+            "med": 13.796079,
+            "max": 1830.934934,
+            "p(90)": 27.417762400000008,
+            "p(95)": 52.074494799999954
+        },
+        "http_req_sending": {
+            "p(90)": 0.0514251,
+            "p(95)": 0.06025449999999998,
+            "avg": 0.03559117294685971,
+            "min": 0.006893,
+            "med": 0.0328715,
+            "max": 0.195374
+        },
+        "group_duration": {
+            "avg": 911.5738572781605,
+            "min": 6.355725,
+            "med": 1014.6024454999999,
+            "max": 2831.412348,
+            "p(90)": 1037.6055985,
+            "p(95)": 1063.2103736
+        },
+        "data_received": {
+            "count": 76060563,
+            "rate": 357506.354829968
+        },
+        "http_req_failed": {
+            "passes": 1389,
+            "fails": 6891,
+            "thresholds": {
+                "rate<0.1": true
+            },
+            "value": 0.1677536231884058
+        },
+        "data_sent": {
+            "count": 750375,
+            "rate": 3526.9766673372806
+        },
+        "http_req_tls_handshaking": {
+            "p(95)": 0,
+            "avg": 0.06922858780193238,
+            "min": 0,
+            "med": 0,
+            "max": 11.000798,
+            "p(90)": 0
+        },
+        "checks": {
+            "passes": 12414,
+            "fails": 1394,
+            "value": 0.8990440324449595
+        },
+        "http_req_receiving": {
+            "med": 0.083475,
+            "max": 2.143849,
+            "p(90)": 0.2141943,
+            "p(95)": 0.2640846999999998,
+            "avg": 0.1090963782608699,
+            "min": 0
+        },
+        "vus_max": {
+            "value": 50,
+            "min": 50,
+            "max": 50
+        },
+        "iteration_duration": {
+            "p(95)": 5044.702775349999,
+            "avg": 4634.115374437866,
+            "min": 6.380892,
+            "med": 4585.6798495,
+            "max": 6407.107564,
+            "p(90)": 4797.0828164
+        },
+        "errors": {
+            "passes": 0,
+            "fails": 2759,
+            "thresholds": {
+                "rate<0.1": false
+            },
+            "value": 0
+        },
+        "http_req_waiting": {
+            "p(95)": 46.04340034999998,
+            "avg": 26.145602395652272,
+            "min": 6.158347,
+            "med": 13.2957895,
+            "max": 1830.833723,
+            "p(90)": 25.34398000000002
+        },
+        "iterations": {
+            "count": 1384,
+            "rate": 6.505195012620085
+        }
+    }
+}
