@@ -553,6 +553,18 @@ jobs:
                               <div class="link-title">K6 Performance</div>
                               <div class="link-desc">Load & stress testing</div>
                           </a>
+                          
+                          <a href="https://trading-simulator-beryl.vercel.app" target="_blank" class="link-card" style="background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);">
+                              <div class="link-icon">🌐</div>
+                              <div class="link-title">Live Application</div>
+                              <div class="link-desc">Production deployment</div>
+                          </a>
+                          
+                          <a href="https://github.com/JamesCordova/trading-simulator/issues" target="_blank" class="link-card" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">
+                              <div class="link-icon">🐛</div>
+                              <div class="link-title">GitHub Issues</div>
+                              <div class="link-desc">Bug reports & features</div>
+                          </a>
                       </div>
                       
                       <div class="footer">
